@@ -130,8 +130,10 @@ class Preferences(component.Component):
         render = Gtk.CellRendererToggle()
         render.connect('toggled', self.on_plugin_toggled)
         render.set_property('activatable', True)
-        self.plugin_listview.append_column(gtk.TreeViewColumn(_('Enabled'), render, active=1))
-        self.plugin_listview.append_column(gtk.TreeViewColumn(_('Plugin'), gtk.CellRendererText(), text=2))
+        self.plugin_listview.append_column(
+            Gtk.TreeViewColumn(_('Enabled'), render, active=1))
+        self.plugin_listview.append_column(
+            Gtk.TreeViewColumn(_('Plugin'), Gtk.CellRendererText(), text=2))
 
         # Connect to the 'changed' event of TreeViewSelection to get selection
         # changes.
@@ -211,7 +213,7 @@ class Preferences(component.Component):
         vbox.pack_start(label, False, True, 0)
         sep = Gtk.HSeparator()
         vbox.pack_start(sep, False, True, 0)
-        align = Gtk.Alignment.new(0, 0, 0, 0)
+        align = Gtk.Alignment()
         align.set_padding(5, 0, 0, 0)
         align.set(0, 0, 1, 1)
         align.add(widget)
