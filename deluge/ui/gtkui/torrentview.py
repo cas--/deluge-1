@@ -13,10 +13,9 @@ from __future__ import unicode_literals
 import logging
 from locale import strcoll
 
-from gi.repository.Gtk import EntryIconPosition
-from gi.repository.Gdk import keyval_name
-from gi.repository.Gdk.ModifierType import CONTROL_MASK, MOD1_MASK, SHIFT_MASK
+from gi.repository.Gdk import ModifierType, keyval_name
 from gi.repository.GObject import TYPE_UINT64, idle_add
+from gi.repository.Gtk import EntryIconPosition
 from twisted.internet import reactor
 
 import deluge.component as component
@@ -28,7 +27,7 @@ from deluge.ui.gtkui.removetorrentdialog import RemoveTorrentDialog
 log = logging.getLogger(__name__)
 
 try:
-    CTRL_ALT_MASK = CONTROL_MASK | MOD1_MASK
+    CTRL_ALT_MASK = ModifierType.CONTROL_MASK | ModifierType.MOD1_MASK
 except TypeError:
     # Sphinx AutoDoc has a mock issue with gtk.gdk masks.
     pass
@@ -787,7 +786,7 @@ class TorrentView(ListView, component.Component):
 
         # Move queue position up with Ctrl+Alt or Ctrl+Alt+Shift
         if event.get_state() & CTRL_ALT_MASK:
-            if event.get_state() & SHIFT_MASK:
+            if event.get_state() & ModifierType.SHIFT_MASK:
                 client.core.queue_top(torrents)
             else:
                 client.core.queue_up(torrents)
@@ -801,7 +800,7 @@ class TorrentView(ListView, component.Component):
 
         # Move queue position down with Ctrl+Alt or Ctrl+Alt+Shift
         if event.get_state() & CTRL_ALT_MASK:
-            if event.get_state() & SHIFT_MASK:
+            if event.get_state() & ModifierType.SHIFT_MASK:
                 client.core.queue_bottom(torrents)
             else:
                 client.core.queue_down(torrents)
@@ -810,7 +809,7 @@ class TorrentView(ListView, component.Component):
         log.debug('keypress_delete')
         torrents = self.get_selected_torrents()
         if torrents:
-            if event.get_state() & SHIFT_MASK:
+            if event.get_state() & ModifierType.SHIFT_MASK:
                 RemoveTorrentDialog(torrents, delete_files=True).run()
             else:
                 RemoveTorrentDialog(torrents).run()

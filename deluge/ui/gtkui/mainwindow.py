@@ -13,9 +13,8 @@ import logging
 import os.path
 from hashlib import sha1 as sha
 
-from gi.repository import Gdk, Gtk
-from gi.repository.Gdk import DragAction.COPY
-from gi.repostiory.Gdk.WindowState import ICONIFIED, MAXIMIZED, WITHDRAWN
+from gi.repository import Gtk
+from gi.repository.Gdk import DragAction, WindowState
 from twisted.internet import reactor
 from twisted.internet.error import ReactorNotRunning
 
@@ -28,6 +27,8 @@ from deluge.ui.gtkui.dialogs import PasswordDialog
 from deluge.ui.gtkui.ipcinterface import process_args
 
 try:
+    import gi
+    gi.require_version('Wnck', '3.0')
     from gi.repository import Wnck
 except ImportError:
     Wnck = None
@@ -105,7 +106,10 @@ class MainWindow(component.Component):
         self.restart = False
 
         self.window.drag_dest_set(
-            Gtk.DestDefaults.ALL, [Gtk.TargetEntry(target='text/uri-list', flags=0, info=80)], DragAction.COPY)
+            Gtk.DestDefaults.ALL,
+            [Gtk.TargetEntry.new(target='text/uri-list', flags=0, info=80)],
+            DragAction.COPY,
+        )
 
         # Connect events
         self.window.connect('window-state-event', self.on_window_state_event)
@@ -227,14 +231,14 @@ class MainWindow(component.Component):
             self.config['window_height'] = event.height
 
     def on_window_state_event(self, widget, event):
-        if event.changed_mask & MAXIMIZED:
-            if event.new_window_state & MAXIMIZED:
+        if event.changed_mask & WindowState.MAXIMIZED:
+            if event.new_window_state & WindowState.MAXIMIZED:
                 log.debug('pos: %s', self.window.get_position())
                 self.config['window_maximized'] = True
-            elif not event.new_window_state & WITHDRAWN:
+            elif not event.new_window_state & WindowState.WITHDRAWN:
                 self.config['window_maximized'] = False
-        if event.changed_mask & ICONIFIED:
-            if event.new_window_state & ICONIFIED:
+        if event.changed_mask & WindowState.ICONIFIED:
+            if event.new_window_state & WindowState.ICONIFIED:
                 log.debug('MainWindow is minimized..')
                 component.get('TorrentView').save_state()
                 component.pause(self.child_components)

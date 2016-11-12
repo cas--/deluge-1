@@ -12,9 +12,9 @@ from __future__ import unicode_literals
 import logging
 import os.path
 
-from gi.repository.Gtk import (TreeViewColumnSizing, Builder, CellRendererPixbuf, CellRendererProgress, CellRendererText, ListStore,
-                 TreeViewColumn)
 from gi.repository.GdkPixbuf import Pixbuf
+from gi.repository.Gtk import (Builder, CellRendererPixbuf, CellRendererProgress, CellRendererText, ListStore,
+                               TreeViewColumn, TreeViewColumnSizing)
 
 import deluge.common
 import deluge.component as component
@@ -315,11 +315,9 @@ class PeersTab(Tab):
             return True
 
     def _on_query_tooltip(self, widget, x, y, keyboard_tip, tooltip):
-        if not widget.get_tooltip_context(x, y, keyboard_tip):
-            return False
-        else:
-            x, y, model, path, _iter = widget.get_tooltip_context(x, y, keyboard_tip)
-
+        tooltip, x, y, model, path, _iter = widget.get_tooltip_context(
+            x, y, keyboard_tip)
+        if tooltip:
             country_code = model.get(_iter, 5)[0]
             if country_code != '  ' and country_code in COUNTRIES:
                 tooltip.set_text(COUNTRIES[country_code])
@@ -329,8 +327,7 @@ class PeersTab(Tab):
                     None,
                 )
                 return True
-            else:
-                return False
+        return False
 
     def on_menuitem_add_peer_activate(self, menuitem):
         """This is a callback for manually adding a peer"""

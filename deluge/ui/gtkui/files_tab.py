@@ -13,10 +13,8 @@ import logging
 import os.path
 
 import six.moves.cPickle as pickle
-from gi.repository import Gdk, Gtk
-from gi.repository.Gdk import keyval_name
-from gi.repository.Gdk import DragAction
-from gi.repository.Gdk.ModifierType import BUTTON1_MASK
+from gi.repository import Gtk
+from gi.repository.Gdk import DragAction, ModifierType, keyval_name
 from gi.repository.GObject import TYPE_UINT64
 
 import deluge.component as component
@@ -31,10 +29,10 @@ from deluge.ui.gtkui.torrentview_data_funcs import cell_data_size
 log = logging.getLogger(__name__)
 
 CELL_PRIORITY_ICONS = {
-    'Ignore': gtk.STOCK_NO,
-    'Low': gtk.STOCK_GO_DOWN,
-    'Normal': gtk.STOCK_OK,
-    'High': gtk.STOCK_GO_UP,
+    'Ignore': Gtk.STOCK_NO,
+    'Low': Gtk.STOCK_GO_DOWN,
+    'Normal': Gtk.STOCK_OK,
+    'High': Gtk.STOCK_GO_UP,
 }
 
 
@@ -172,7 +170,9 @@ class FilesTab(Tab):
         self.listview.connect('button-press-event', self._on_button_press_event)
 
         self.listview.enable_model_drag_source(
-            BUTTON1_MASK, [('text/plain', 0, 0)], DragAction.DEFAULT | DragAction.MOVE,
+            ModifierType.BUTTON1_MASK,
+            [('text/plain', 0, 0)],
+            DragAction.DEFAULT | DragAction.MOVE,
         )
         self.listview.enable_model_drag_dest([('text/plain', 0, 0)], DragAction.DEFAULT)
 

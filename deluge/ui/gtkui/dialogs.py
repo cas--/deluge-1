@@ -11,7 +11,7 @@
 
 from __future__ import unicode_literals
 
-from gi.repository import GdkPixbuf, Gtk
+from gi.repository import Gtk
 from twisted.internet import defer
 
 import deluge.component as component
@@ -205,7 +205,7 @@ class AuthenticationDialog(BaseDialog):
                 Gtk.STOCK_CANCEL,
                 Gtk.ResponseType.CANCEL,
                 Gtk.STOCK_CONNECT,
-                Gtk.ResponseType.OK
+                Gtk.ResponseType.OK,
             ),
             parent,
         )
@@ -263,7 +263,7 @@ class AccountDialog(BaseDialog):
                     Gtk.STOCK_CANCEL,
                     Gtk.ResponseType.CANCEL,
                     Gtk.STOCK_APPLY,
-                    Gtk.ResponseType.OK
+                    Gtk.ResponseType.OK,
                 ),
                 parent,
             )
@@ -430,7 +430,7 @@ class PasswordDialog(BaseDialog):
                 Gtk.STOCK_CANCEL,
                 Gtk.ResponseType.CANCEL,
                 Gtk.STOCK_CONNECT,
-                Gtk.ResponseType.OK
+                Gtk.ResponseType.OK,
             ),
             parent,
         )
