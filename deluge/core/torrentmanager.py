@@ -31,6 +31,8 @@ from deluge.error import AddTorrentError, InvalidTorrentError
 from deluge.event import (ExternalIPEvent, PreTorrentRemovedEvent, SessionStartedEvent, TorrentAddedEvent,
                           TorrentFileCompletedEvent, TorrentFileRenamedEvent, TorrentFinishedEvent, TorrentRemovedEvent,
                           TorrentResumedEvent)
+from deluge.core.torrent_fastresume import FastResume
+from deluge.core.torrentmanager_state import State
 
 log = logging.getLogger(__name__)
 
@@ -39,70 +41,6 @@ LT_DEFAULT_ADD_TORRENT_FLAGS = (
     lt.add_torrent_params_flags_t.flag_auto_managed |
     lt.add_torrent_params_flags_t.flag_update_subscribe |
     lt.add_torrent_params_flags_t.flag_apply_ip_filter)
-
-
-class TorrentState:  # pylint: disable=old-style-class
-    """Create a torrent state.
-
-    Note:
-        This must be old style class to avoid breaking torrent.state file.
-
-    """
-    def __init__(self,
-                 torrent_id=None,
-                 filename=None,
-                 trackers=None,
-                 storage_mode='sparse',
-                 paused=False,
-                 save_path=None,
-                 max_connections=-1,
-                 max_upload_slots=-1,
-                 max_upload_speed=-1.0,
-                 max_download_speed=-1.0,
-                 prioritize_first_last=False,
-                 sequential_download=False,
-                 file_priorities=None,
-                 queue=None,
-                 auto_managed=True,
-                 is_finished=False,
-                 stop_ratio=2.00,
-                 stop_at_ratio=False,
-                 remove_at_ratio=False,
-                 move_completed=False,
-                 move_completed_path=None,
-                 magnet=None,
-                 owner=None,
-                 shared=False,
-                 super_seeding=False,
-                 name=None):
-        # Build the class atrribute list from args
-        for key, value in locals().items():
-            if key == 'self':
-                continue
-            setattr(self, key, value)
-
-    def __eq__(self, other):
-        return isinstance(other, TorrentState) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not self == other
-
-
-class TorrentManagerState:  # pylint: disable=old-style-class
-    """TorrentManagerState holds a list of TorrentState objects.
-
-    Note:
-        This must be old style class to avoid breaking torrent.state file.
-
-    """
-    def __init__(self):
-        self.torrents = []
-
-    def __eq__(self, other):
-        return isinstance(other, TorrentManagerState) and self.torrents == other.torrents
-
-    def __ne__(self, other):
-        return not self == other
 
 
 class TorrentManager(component.Component):
@@ -128,17 +66,19 @@ class TorrentManager(component.Component):
         if not os.path.exists(self.state_dir):
             os.makedirs(self.state_dir)
         self.temp_file = os.path.join(self.state_dir, '.safe_state_check')
+        self.tm_state = State(self.state_dir)
 
         # Create the torrents dict { torrent_id: Torrent }
         self.torrents = {}
         self.queued_torrents = set()
         self.is_saving_state = False
-        self.save_resume_data_file_lock = defer.DeferredLock()
         self.torrents_loading = {}
 
         # This is a map of torrent_ids to Deferreds used to track needed resume data.
         # The Deferreds will be completed when resume data has been saved.
-        self.waiting_on_resume_data = {}
+        self.save_resume_data_file_lock = defer.DeferredLock()
+        self.fastresume = FastResume(self.state_dir)
+        self.waiting_on_resume_data = self.fastresume.awaiting_torrents
 
         # Keep track of torrents finished but moving storage
         self.waiting_on_finish_moving = []
@@ -146,35 +86,52 @@ class TorrentManager(component.Component):
         # Keeps track of resume data
         self.resume_data = {}
 
+        # Torrents status details
         self.torrents_status_requests = []
         self.status_dict = {}
         self.last_state_update_alert_ts = 0
 
-        # Keep the previous saved state
-        self.prev_saved_state = None
-
         # Register set functions
-        set_config_keys = ['max_connections_per_torrent', 'max_upload_slots_per_torrent',
-                           'max_upload_speed_per_torrent', 'max_download_speed_per_torrent']
-
+        set_config_keys = [
+            'max_connections_per_torrent',
+            'max_upload_slots_per_torrent',
+            'max_upload_speed_per_torrent',
+            'max_download_speed_per_torrent',
+        ]
         for config_key in set_config_keys:
             on_set_func = getattr(self, ''.join(['on_set_', config_key]))
             self.config.register_set_function(config_key, on_set_func)
 
         # Register alert functions
         alert_handles = [
-            'external_ip_alert', 'performance_alert', 'add_torrent_alert',
-            'metadata_received_alert', 'torrent_finished_alert', 'torrent_paused_alert',
-            'torrent_checked_alert', 'torrent_resumed_alert', 'tracker_reply_alert',
-            'tracker_announce_alert', 'tracker_warning_alert', 'tracker_error_alert',
-            'file_renamed_alert', 'file_error_alert', 'file_completed_alert',
-            'storage_moved_alert', 'storage_moved_failed_alert', 'state_update_alert',
-            'state_changed_alert', 'save_resume_data_alert', 'save_resume_data_failed_alert',
-            'fastresume_rejected_alert'
+            'external_ip_alert',
+            'performance_alert',
+            'add_torrent_alert',
+            'metadata_received_alert',
+            'torrent_finished_alert',
+            'torrent_paused_alert',
+            'torrent_checked_alert',
+            'torrent_resumed_alert',
+            'tracker_reply_alert',
+            'tracker_announce_alert',
+            'tracker_warning_alert',
+            'tracker_error_alert',
+            'file_renamed_alert',
+            'file_error_alert',
+            'file_completed_alert',
+            'storage_moved_alert',
+            'storage_moved_failed_alert',
+            'state_update_alert',
+            'state_changed_alert',
+            'save_resume_data_alert',
+            'save_resume_data_failed_alert',
+            'fastresume_rejected_alert',
         ]
-
         for alert_handle in alert_handles:
-            on_alert_func = getattr(self, ''.join(['on_alert_', alert_handle.replace('_alert', '')]))
+            on_alert_func = getattr(
+                self,
+                ''.join(['on_alert_', alert_handle.replace('_alert', '')])
+            )
             self.alerts.register_handler(alert_handle, on_alert_func)
 
         # Define timers
@@ -217,7 +174,7 @@ class TorrentManager(component.Component):
             self.prev_status_cleanup_loop.stop()
 
         # Save state on shutdown
-        yield self.save_state()
+        yield self.tm_state.save(self.torrents)
 
         self.session.pause()
 
@@ -593,51 +550,6 @@ class TorrentManager(component.Component):
         log.info('Torrent %s removed by user: %s', torrent_name, component.get('RPCServer').get_session_user())
         return True
 
-    def fixup_state(self, state):
-        """Fixup an old state by adding missing TorrentState options and assigning default values.
-
-        Args:
-            state (TorrentManagerState): A torrentmanager state containing torrent details.
-
-        Returns:
-            TorrentManagerState: A fixedup TorrentManager state.
-
-        """
-        if state.torrents:
-            t_state_tmp = TorrentState()
-            if dir(state.torrents[0]) != dir(t_state_tmp):
-                try:
-                    for attr in set(dir(t_state_tmp)) - set(dir(state.torrents[0])):
-                        for t_state in state.torrents:
-                            setattr(t_state, attr, getattr(t_state_tmp, attr, None))
-                except AttributeError as ex:
-                    log.error('Unable to update state file to a compatible version: %s', ex)
-        return state
-
-    def open_state(self):
-        """Open the torrents.state file containing a TorrentManager state with session torrents.
-
-        Returns:
-            TorrentManagerState: The TorrentManager state.
-
-        """
-        torrents_state = os.path.join(self.state_dir, 'torrents.state')
-        for filepath in (torrents_state, torrents_state + '.bak'):
-            log.info('Loading torrent state: %s', filepath)
-            try:
-                with open(filepath, 'rb') as _file:
-                    state = pickle.load(_file)
-            except (IOError, EOFError, pickle.UnpicklingError) as ex:
-                log.warning('Unable to load %s: %s', filepath, ex)
-                state = None
-            else:
-                log.info('Successfully loaded %s', filepath)
-                break
-
-        if state is None:
-            state = TorrentManagerState()
-        return state
-
     def load_state(self):
         """Load all the torrents from TorrentManager state into session.
 
@@ -646,12 +558,11 @@ class TorrentManager(component.Component):
 
         """
         start = datetime.datetime.now()
-        state = self.open_state()
-        state = self.fixup_state(state)
+        state = tm_state.load()
 
         # Reorder the state.torrents list to add torrents in the correct queue order.
         state.torrents.sort(key=operator.attrgetter('queue'), reverse=self.config['queue_new_to_top'])
-        resume_data = self.load_resume_data_file()
+        resume_data = fastresume.load(self.torrents, self.state_dir)
 
         deferreds = []
         for t_state in state.torrents:
@@ -695,55 +606,6 @@ class TorrentManager(component.Component):
             component.get('EventManager').emit(SessionStartedEvent())
         deferred_list.addCallback(on_complete)
 
-    def create_state(self):
-        """Create a state of all the torrents in TorrentManager.
-
-        Returns:
-            TorrentManagerState: The TorrentManager state.
-
-        """
-        state = TorrentManagerState()
-        # Create the state for each Torrent and append to the list
-        for torrent in self.torrents.values():
-            if self.session.is_paused():
-                paused = torrent.handle.is_paused()
-            elif torrent.forced_error:
-                paused = torrent.forced_error.was_paused
-            elif torrent.state == 'Paused':
-                paused = True
-            else:
-                paused = False
-
-            torrent_state = TorrentState(
-                torrent.torrent_id,
-                torrent.filename,
-                torrent.trackers,
-                torrent.get_status(['storage_mode'])['storage_mode'],
-                paused,
-                torrent.options['download_location'],
-                torrent.options['max_connections'],
-                torrent.options['max_upload_slots'],
-                torrent.options['max_upload_speed'],
-                torrent.options['max_download_speed'],
-                torrent.options['prioritize_first_last_pieces'],
-                torrent.options['sequential_download'],
-                torrent.options['file_priorities'],
-                torrent.get_queue_position(),
-                torrent.options['auto_managed'],
-                torrent.is_finished,
-                torrent.options['stop_ratio'],
-                torrent.options['stop_at_ratio'],
-                torrent.options['remove_at_ratio'],
-                torrent.options['move_completed'],
-                torrent.options['move_completed_path'],
-                torrent.magnet,
-                torrent.options['owner'],
-                torrent.options['shared'],
-                torrent.options['super_seeding'],
-                torrent.options['name']
-            )
-            state.torrents.append(torrent_state)
-        return state
 
     def save_state(self):
         """Run the save state task in a separate thread to avoid blocking main thread.
@@ -752,141 +614,20 @@ class TorrentManager(component.Component):
             If a save task is already running, this call is ignored.
 
         """
+        # move this threading to Fastresume class
         if self.is_saving_state:
             return defer.succeed(None)
         self.is_saving_state = True
-        d = threads.deferToThread(self._save_state)
+        d = threads.deferToThread(tm_state.save, self.torrents)
 
-        def on_state_saved(arg):
+        def on_state_saved(result):
             self.is_saving_state = False
             if self.save_state_timer.running:
                 self.save_state_timer.reset()
         d.addBoth(on_state_saved)
         return d
 
-    def _save_state(self):
-        """Save the state of the TorrentManager to the torrents.state file."""
-        state = self.create_state()
-        if not state.torrents:
-            log.debug('Skipping saving state with no torrents loaded')
-            return
-
-        # If the state hasn't changed, no need to save it
-        if self.prev_saved_state == state:
-            return
-
-        filename = 'torrents.state'
-        filepath = os.path.join(self.state_dir, filename)
-        filepath_bak = filepath + '.bak'
-        filepath_tmp = filepath + '.tmp'
-
-        try:
-            log.debug('Creating the temporary file: %s', filepath_tmp)
-            with open(filepath_tmp, 'wb', 0) as _file:
-                pickle.dump(state, _file)
-                _file.flush()
-                os.fsync(_file.fileno())
-        except (OSError, pickle.PicklingError) as ex:
-            log.error('Unable to save %s: %s', filename, ex)
-            return
-
-        try:
-            log.debug('Creating backup of %s at: %s', filename, filepath_bak)
-            if os.path.isfile(filepath_bak):
-                os.remove(filepath_bak)
-            if os.path.isfile(filepath):
-                os.rename(filepath, filepath_bak)
-        except OSError as ex:
-            log.error('Unable to backup %s to %s: %s', filepath, filepath_bak, ex)
-            return
-
-        try:
-            log.debug('Saving %s to: %s', filename, filepath)
-            os.rename(filepath_tmp, filepath)
-            self.prev_saved_state = state
-        except OSError as ex:
-            log.error('Failed to set new state file %s: %s', filepath, ex)
-            if os.path.isfile(filepath_bak):
-                log.info('Restoring backup of state from: %s', filepath_bak)
-                os.rename(filepath_bak, filepath)
-
-    def save_resume_data(self, torrent_ids=None, flush_disk_cache=False):
-        """Saves torrents resume data.
-
-        Args:
-            torrent_ids (list of str): A list of torrents to save the resume data for, defaults
-                to None which saves all torrents resume data.
-            flush_disk_cache (bool, optional): If True flushes the disk cache which avoids potential
-                issue with file timestamps, defaults to False. This is only needed when stopping the session.
-
-        Returns:
-            t.i.d.DeferredList: A list of twisted Deferred callbacks to be invoked when save is complete.
-
-        """
-        if torrent_ids is None:
-            torrent_ids = (tid for tid, t in self.torrents.items() if t.handle.need_save_resume_data())
-
-        def on_torrent_resume_save(dummy_result, torrent_id):
-            """Recieved torrent resume_data alert so remove from waiting list"""
-            self.waiting_on_resume_data.pop(torrent_id, None)
-
-        deferreds = []
-        for torrent_id in torrent_ids:
-            d = self.waiting_on_resume_data.get(torrent_id)
-            if not d:
-                d = Deferred().addBoth(on_torrent_resume_save, torrent_id)
-                self.waiting_on_resume_data[torrent_id] = d
-            deferreds.append(d)
-            self.torrents[torrent_id].save_resume_data(flush_disk_cache)
-
-        def on_all_resume_data_finished(dummy_result):
-            """Saves resume data file when no more torrents waiting for resume data.
-
-            Returns:
-                bool: True if fastresume file is saved.
-
-                This return value determines removal of `self.temp_file` in `self.stop()`.
-
-            """
-            # Use flush_disk_cache as a marker for shutdown so fastresume is
-            # saved even if torrents are waiting.
-            if not self.waiting_on_resume_data or flush_disk_cache:
-                return self.save_resume_data_file(queue_task=flush_disk_cache)
-
-        return DeferredList(deferreds).addBoth(on_all_resume_data_finished)
-
-    def load_resume_data_file(self):
-        """Load the resume data from file for all torrents.
-
-        Returns:
-            dict: A dict of torrents and their resume_data.
-
-        """
-        filename = 'torrents.fastresume'
-        filepath = os.path.join(self.state_dir, filename)
-        filepath_bak = filepath + '.bak'
-        old_data_filepath = os.path.join(get_config_dir(), filename)
-
-        for _filepath in (filepath, filepath_bak, old_data_filepath):
-            log.info('Opening %s for load: %s', filename, _filepath)
-            try:
-                with open(_filepath, 'rb') as _file:
-                    resume_data = lt.bdecode(_file.read())
-            except (IOError, EOFError, RuntimeError) as ex:
-                if self.torrents:
-                    log.warning('Unable to load %s: %s', _filepath, ex)
-                resume_data = None
-            else:
-                log.info('Successfully loaded %s: %s', filename, _filepath)
-                break
-        # If the libtorrent bdecode doesn't happen properly, it will return None
-        # so we need to make sure we return a {}
-        if resume_data is None:
-            return {}
-        else:
-            return resume_data
-
-    def save_resume_data_file(self, queue_task=False):
+    def save_fastresume(self, queue_task=False):
         """Save resume data to file in a separate thread to avoid blocking main thread.
 
         Args:
@@ -898,65 +639,21 @@ class TorrentManager(component.Component):
                 not and None if task was not performed.
 
         """
+
+        def on_resume_data_file_saved(arg):
+            if self.save_resume_data_timer.running:
+                self.save_resume_data_timer.reset()
+            return arg
+
+        # move this to tm_state
         if not queue_task and self.save_resume_data_file_lock.locked:
             return defer.succeed(None)
 
         def on_lock_aquired():
-            d = threads.deferToThread(self._save_resume_data_file)
-
-            def on_resume_data_file_saved(arg):
-                if self.save_resume_data_timer.running:
-                    self.save_resume_data_timer.reset()
-                return arg
+            d = threads.deferToThread(fastresume.save)
             d.addBoth(on_resume_data_file_saved)
             return d
         return self.save_resume_data_file_lock.run(on_lock_aquired)
-
-    def _save_resume_data_file(self):
-        """Saves the resume data file with the contents of self.resume_data"""
-        if not self.resume_data:
-            return True
-
-        filename = 'torrents.fastresume'
-        filepath = os.path.join(self.state_dir, filename)
-        filepath_bak = filepath + '.bak'
-        filepath_tmp = filepath + '.tmp'
-
-        try:
-            log.debug('Creating the temporary file: %s', filepath_tmp)
-            with open(filepath_tmp, 'wb', 0) as _file:
-                _file.write(lt.bencode(self.resume_data))
-                _file.flush()
-                os.fsync(_file.fileno())
-        except (OSError, EOFError) as ex:
-            log.error('Unable to save %s: %s', filename, ex)
-            return False
-
-        try:
-            log.debug('Creating backup of %s at: %s', filename, filepath_bak)
-            if os.path.isfile(filepath_bak):
-                os.remove(filepath_bak)
-            if os.path.isfile(filepath):
-                os.rename(filepath, filepath_bak)
-        except OSError as ex:
-            log.error('Unable to backup %s to %s: %s', filepath, filepath_bak, ex)
-            return False
-
-        try:
-            log.debug('Saving %s to: %s', filename, filepath)
-            os.rename(filepath_tmp, filepath)
-        except OSError as ex:
-            log.error('Failed to set new file %s: %s', filepath, ex)
-            if os.path.isfile(filepath_bak):
-                log.info('Restoring backup from: %s', filepath_bak)
-                os.rename(filepath_bak, filepath)
-        else:
-            # Sync the rename operations for the directory
-            if hasattr(os, 'O_DIRECTORY'):
-                dirfd = os.open(os.path.dirname(filepath), os.O_DIRECTORY)
-                os.fsync(dirfd)
-                os.close(dirfd)
-            return True
 
     def get_queue_position(self, torrent_id):
         """Get queue position of torrent"""
