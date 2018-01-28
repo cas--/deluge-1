@@ -10,14 +10,13 @@
 """TorrentManager handles Torrent objects"""
 from __future__ import unicode_literals
 
-import cPickle as pickle
 import datetime
 import logging
 import operator
 import os
 import time
 
-from twisted.internet import defer, reactor, threads
+from twisted.internet import defer, reactor
 from twisted.internet.defer import Deferred, DeferredList
 from twisted.internet.task import LoopingCall
 
@@ -26,21 +25,30 @@ from deluge._libtorrent import lt
 from deluge.common import archive_files, decode_bytes, get_magnet_info
 from deluge.configmanager import ConfigManager, get_config_dir
 from deluge.core.authmanager import AUTH_LEVEL_ADMIN
+from deluge.core.fastresume import FastResume
+from deluge.core.state import State
 from deluge.core.torrent import Torrent, TorrentOptions, sanitize_filepath
 from deluge.error import AddTorrentError, InvalidTorrentError
-from deluge.event import (ExternalIPEvent, PreTorrentRemovedEvent, SessionStartedEvent, TorrentAddedEvent,
-                          TorrentFileCompletedEvent, TorrentFileRenamedEvent, TorrentFinishedEvent, TorrentRemovedEvent,
-                          TorrentResumedEvent)
-from deluge.core.torrent_fastresume import FastResume
-from deluge.core.torrentmanager_state import State
+from deluge.event import (
+    ExternalIPEvent,
+    PreTorrentRemovedEvent,
+    SessionStartedEvent,
+    TorrentAddedEvent,
+    TorrentFileCompletedEvent,
+    TorrentFileRenamedEvent,
+    TorrentFinishedEvent,
+    TorrentRemovedEvent,
+    TorrentResumedEvent,
+)
 
 log = logging.getLogger(__name__)
 
 LT_DEFAULT_ADD_TORRENT_FLAGS = (
-    lt.add_torrent_params_flags_t.flag_paused |
-    lt.add_torrent_params_flags_t.flag_auto_managed |
-    lt.add_torrent_params_flags_t.flag_update_subscribe |
-    lt.add_torrent_params_flags_t.flag_apply_ip_filter)
+    lt.add_torrent_params_flags_t.flag_paused
+    | lt.add_torrent_params_flags_t.flag_auto_managed
+    | lt.add_torrent_params_flags_t.flag_update_subscribe
+    | lt.add_torrent_params_flags_t.flag_apply_ip_filter
+)
 
 
 class TorrentManager(component.Component):
@@ -51,8 +59,12 @@ class TorrentManager(component.Component):
     """
 
     def __init__(self):
-        component.Component.__init__(self, 'TorrentManager', interval=5,
-                                     depend=['CorePluginManager', 'AlertManager'])
+        component.Component.__init__(
+            self,
+            'TorrentManager',
+            interval=5,
+            depend=['CorePluginManager', 'AlertManager'],
+        )
         log.debug('TorrentManager init...')
         # Set the libtorrent session
         self.session = component.get('Core').session
@@ -76,7 +88,6 @@ class TorrentManager(component.Component):
 
         # This is a map of torrent_ids to Deferreds used to track needed resume data.
         # The Deferreds will be completed when resume data has been saved.
-        self.save_resume_data_file_lock = defer.DeferredLock()
         self.fastresume = FastResume(self.state_dir)
         self.waiting_on_resume_data = self.fastresume.awaiting_torrents
 
@@ -558,11 +569,11 @@ class TorrentManager(component.Component):
 
         """
         start = datetime.datetime.now()
-        state = tm_state.load()
+        state = self.tm_state.load()
 
         # Reorder the state.torrents list to add torrents in the correct queue order.
         state.torrents.sort(key=operator.attrgetter('queue'), reverse=self.config['queue_new_to_top'])
-        resume_data = fastresume.load(self.torrents, self.state_dir)
+        resume_data = self.fastresume.load(self.torrents, self.state_dir)
 
         deferreds = []
         for t_state in state.torrents:
@@ -606,7 +617,6 @@ class TorrentManager(component.Component):
             component.get('EventManager').emit(SessionStartedEvent())
         deferred_list.addCallback(on_complete)
 
-
     def save_state(self):
         """Run the save state task in a separate thread to avoid blocking main thread.
 
@@ -614,18 +624,12 @@ class TorrentManager(component.Component):
             If a save task is already running, this call is ignored.
 
         """
-        # move this threading to Fastresume class
-        if self.is_saving_state:
-            return defer.succeed(None)
-        self.is_saving_state = True
-        d = threads.deferToThread(tm_state.save, self.torrents)
-
         def on_state_saved(result):
-            self.is_saving_state = False
             if self.save_state_timer.running:
                 self.save_state_timer.reset()
-        d.addBoth(on_state_saved)
-        return d
+
+        d = self.tm_state.save(self.torrents)
+        return d.addBoth(on_state_saved)
 
     def save_fastresume(self, queue_task=False):
         """Save resume data to file in a separate thread to avoid blocking main thread.
@@ -639,21 +643,13 @@ class TorrentManager(component.Component):
                 not and None if task was not performed.
 
         """
-
-        def on_resume_data_file_saved(arg):
+        def on_fastresume_saved(result):
             if self.save_resume_data_timer.running:
                 self.save_resume_data_timer.reset()
-            return arg
+            return result
 
-        # move this to tm_state
-        if not queue_task and self.save_resume_data_file_lock.locked:
-            return defer.succeed(None)
-
-        def on_lock_aquired():
-            d = threads.deferToThread(fastresume.save)
-            d.addBoth(on_resume_data_file_saved)
-            return d
-        return self.save_resume_data_file_lock.run(on_lock_aquired)
+        d = self.fastresume.save(queue_task)
+        d.addBoth(on_fastresume_saved)
 
     def get_queue_position(self, torrent_id):
         """Get queue position of torrent"""
