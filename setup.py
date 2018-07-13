@@ -446,14 +446,16 @@ if windows_check():
         'deluged-debug = deluge.core.daemon_entry:start_daemon'])
 _entry_points['gui_scripts'] = [
     'deluge = deluge.ui.ui_entry:start_ui',
-    'deluge-gtk = deluge.ui.gtkui:start']
+    'deluge-gtk = deluge.ui.gtk3:start',
+]
 _entry_points['deluge.ui'] = [
     'console = deluge.ui.console:Console',
     'web = deluge.ui.web:Web',
-    'gtk = deluge.ui.gtkui:Gtk']
+    'gtk3 = deluge.ui.gtk3:Gtk',
+]
 
 
-_package_data['deluge'] = [
+_package_data['deluge.ui'] = [
     'ui/data/pixmaps/*.png',
     'ui/data/pixmaps/*.svg',
     'ui/data/pixmaps/*.ico',
@@ -475,7 +477,7 @@ _package_data['deluge.ui.web'] = [
     'themes/images/*/*.png',
     'themes/images/*/*/*.gif',
     'themes/images/*/*/*.png']
-_package_data['deluge.ui.gtkui'] = ['glade/*.ui']
+_package_data['deluge.ui.gtk3'] = ['glade/*.ui']
 
 if 'dev' not in _version:
     _exclude_package_data['deluge.ui.web'] = ['*-debug.js', '*-debug.css']

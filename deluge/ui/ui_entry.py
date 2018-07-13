@@ -27,7 +27,7 @@ from deluge.ui.baseargparser import BaseArgParser
 from deluge.ui.translations_util import setup_translations
 
 DEFAULT_PREFS = {
-    'default_ui': 'gtk',
+    'default_ui': 'gtk3',
 }
 
 AMBIGUOUS_CMD_ARGS = ('-h', '--help', '-v', '-V', '--version')
