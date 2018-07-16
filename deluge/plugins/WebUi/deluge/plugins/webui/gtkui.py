@@ -18,7 +18,7 @@ import logging
 import gtk
 
 import deluge.component as component
-from deluge.plugins.pluginbase import GtkPluginBase
+from deluge.plugins.pluginbase import Gtk3PluginBase
 from deluge.ui.client import client
 
 from .common import get_resource
@@ -26,7 +26,7 @@ from .common import get_resource
 log = logging.getLogger(__name__)
 
 
-class GtkUI(GtkPluginBase):
+class GtkUI(Gtk3PluginBase):
     def enable(self):
         self.builder = gtk.Builder()
         self.builder.add_from_file(get_resource('config.ui'))

@@ -21,7 +21,7 @@ import gtk
 import deluge
 from deluge import component
 from deluge.common import fspeed
-from deluge.plugins.pluginbase import GtkPluginBase
+from deluge.plugins.pluginbase import Gtk3PluginBase
 from deluge.ui.client import client
 from deluge.ui.gtkui.torrentdetails import Tab
 
@@ -232,7 +232,7 @@ class GraphsTab(Tab):
         return True
 
 
-class GtkUI(GtkPluginBase):
+class GtkUI(Gtk3PluginBase):
 
     def enable(self):
         log.debug('Stats plugin enable called')
