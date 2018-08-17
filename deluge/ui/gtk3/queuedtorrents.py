@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 import logging
 import os.path
 
-from gi.repository.GObject import timeout_add
+from gi.repository.GLib import timeout_add
 from gi.repository.Gtk import STOCK_SORT_DESCENDING, Builder, CellRendererText, ListStore, TreeViewColumn
 
 import deluge.common
@@ -150,7 +150,7 @@ class QueuedTorrents(component.Component):
     def on_button_add_clicked(self, widget):
         # Add all the torrents in the liststore
         def add_torrent(model, path, _iter, data):
-            torrent_path = model.get_value(_iter, 1).decode('utf-8')
+            torrent_path = model.get_value(_iter, 1)
             process_args([torrent_path])
 
         self.liststore.foreach(add_torrent, None)

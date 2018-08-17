@@ -18,7 +18,7 @@ import sys
 import six.moves.cPickle as pickle
 from gi.repository.Gdk import SELECTION_CLIPBOARD
 from gi.repository.GdkPixbuf import Colorspace, Pixbuf
-from gi.repository.GObject import GError
+from gi.repository.GLib import GError
 from gi.repository.Gtk import Clipboard, IconTheme, Menu, MenuItem, RadioMenuItem, SeparatorMenuItem, SortType
 
 from deluge.common import get_pixmap, osx_check, windows_check
