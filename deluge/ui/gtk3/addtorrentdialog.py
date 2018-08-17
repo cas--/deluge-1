@@ -683,7 +683,7 @@ class AddTorrentDialog(component.Component):
         response = dialog.run()
 
         if response == Gtk.ResponseType.OK:
-            url = entry.get_text().decode('utf-8')
+            url = entry.get_text()
         else:
             url = None
 

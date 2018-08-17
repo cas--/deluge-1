@@ -146,7 +146,7 @@ class CreateTorrentDialog(object):
             chooser.destroy()
             return
 
-        path = result.decode('utf-8')
+        path = result
 
         self.files_treestore.clear()
         self.files_treestore.append(None, [result, Gtk.STOCK_FILE, get_path_size(path)])
@@ -180,7 +180,7 @@ class CreateTorrentDialog(object):
             chooser.destroy()
             return
 
-        path = result.decode('utf-8')
+        path = result
 
         self.files_treestore.clear()
         self.files_treestore.append(None, [result, Gtk.STOCK_OPEN, get_path_size(path)])
@@ -346,12 +346,12 @@ class CreateTorrentDialog(object):
 
             deferToThread(
                 self.create_torrent,
-                path.decode('utf-8'),
+                path,
                 tracker,
                 piece_length,
                 self._on_create_torrent_progress,
                 comment,
-                result.decode('utf-8'),
+                result,
                 webseeds,
                 private,
                 author,
