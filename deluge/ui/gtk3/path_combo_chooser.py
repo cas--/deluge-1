@@ -573,16 +573,16 @@ class PathChooserPopup(object):
 
         height_extra = 8
         buttonbox_width = 0
-        height = self.popup_window.get_preferred_size().height
-        width = self.popup_window.get_preferred_size().width
+        height = self.popup_window.get_preferred_height()[1]
+        width = self.popup_window.get_preferred_width()[1]
 
         if self.popup_buttonbox:
-            buttonbox_height = max(self.popup_buttonbox.get_preferred_size().height,
+            buttonbox_height = max(self.popup_buttonbox.get_preferred_height()[1],
                                    self.popup_buttonbox.get_allocation().height)
-            buttonbox_width = max(self.popup_buttonbox.get_preferred_size().width,
+            buttonbox_width = max(self.popup_buttonbox.get_preferred_width()[1],
                                   self.popup_buttonbox.get_allocation().width)
-            treeview_width = self.treeview.get_preferred_size().width
-            # After removing an element from the tree store, self.treeview.get_preferred_size()[0]
+            treeview_width = self.treeview.get_preferred_width()[1]
+            # After removing an element from the tree store, self.treeview.get_preferred_width()[0]
             # returns -1 for some reason, so the requested width cannot be used until the treeview
             # has been displayed once.
             if treeview_width != -1:
@@ -596,12 +596,12 @@ class PathChooserPopup(object):
             width = self.alignment_widget.get_allocation().width
 
         # 10 is extra spacing
-        content_width = self.treeview.get_preferred_size().width + buttonbox_width + 10
+        content_width = self.treeview.get_preferred_width()[1] + buttonbox_width + 10
 
         # Adjust height according to number of list items
         if len(self.tree_store) > 0 and self.max_visible_rows > 0:
             # The height for one row in the list
-            self.row_height = self.treeview.get_preferred_size().height / len(self.tree_store)
+            self.row_height = self.treeview.get_preferred_height()[1] / len(self.tree_store)
             # Set height to number of rows
             height = len(self.tree_store) * self.row_height + height_extra
             # Adjust the height according to the max number of rows
@@ -1037,19 +1037,20 @@ GtkGI = get_introspection_module('Gtk')
 
 class PathChooserComboBox(GtkGI.Box, StoredValuesPopup, GObject.GObject):
 
+    RUN_FIRST_SIGNAL_PROPS = (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (object, ))
     __gsignals__ = {
-        b'list-value-added': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'list-value-removed': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'list-values-reordered': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'list-values-changed': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'auto-complete-enabled-toggled': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'show-filechooser-toggled': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'show-path-entry-toggled': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'show-folder-name-on-button': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'show-hidden-files-toggled': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'accelerator-set': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'max-rows-changed': (SignalFlags.RUN_FIRST, None, (object, )),
-        b'text-changed': (SignalFlags.RUN_FIRST, None, (object, )),
+        'text-changed': RUN_FIRST_SIGNAL_PROPS,
+        'accelerator-set': RUN_FIRST_SIGNAL_PROPS,
+        'max-rows-changed': RUN_FIRST_SIGNAL_PROPS,
+        'list-value-added': RUN_FIRST_SIGNAL_PROPS,
+        'list-value-removed': RUN_FIRST_SIGNAL_PROPS,
+        'list-values-changed': RUN_FIRST_SIGNAL_PROPS,
+        'list-values-reordered': RUN_FIRST_SIGNAL_PROPS,
+        'show-path-entry-toggled': RUN_FIRST_SIGNAL_PROPS,
+        'show-filechooser-toggled': RUN_FIRST_SIGNAL_PROPS,
+        'show-hidden-files-toggled': RUN_FIRST_SIGNAL_PROPS,
+        'show-folder-name-on-button': RUN_FIRST_SIGNAL_PROPS,
+        'auto-complete-enabled-toggled': RUN_FIRST_SIGNAL_PROPS,
     }
 
     def __init__(self, max_visible_rows=20, auto_complete=True, use_completer_popup=True):
@@ -1079,10 +1080,10 @@ class PathChooserComboBox(GtkGI.Box, StoredValuesPopup, GObject.GObject):
         self.button_properties = self.builder.get_object('button_properties')
 
         # FIXME: These are commented out but should be fixed.
-        # self.combobox_window = self.builder.get_object('combobox_window')
+        self.combobox_window = self.builder.get_object('combobox_window')
         self.combo_hbox = self.builder.get_object('entry_combobox_hbox')
         # Change the parent of the hbox from the glade Window to this hbox.
-        # self.combobox_window.remove(self.combo_hbox)
+        self.combobox_window.remove(self.combo_hbox)
         self.combobox_window = self.get_window()
         self.add(self.combo_hbox)
         StoredValuesPopup.__init__(self, self.builder, self, max_visible_rows, self.combo_hbox)
@@ -1543,7 +1544,7 @@ if __name__ == '__main__':
     w.set_title('ComboEntry example')
     w.connect('delete-event', Gtk.main_quit)
 
-    box1 = Gtk.VBox(False, 0)
+    box1 = Gtk.Box(Gtk.Orientation.VERTICAL, 0)
 
     def get_resource2(filename):
         return '%s/glade/%s' % (os.path.abspath(os.path.dirname(sys.argv[0])), filename)
