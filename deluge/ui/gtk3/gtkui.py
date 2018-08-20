@@ -22,7 +22,7 @@ gi.require_version('Gdk', '3.0')  # NOQA: E402
 
 # isort:imports-thirdparty
 from gi.repository.Gdk import threads_enter, threads_init, threads_leave
-from gi.repository.GObject import set_prgname
+from gi.repository.GLib import set_prgname
 from gi.repository.Gtk import ResponseType
 from twisted.internet import defer, gtk3reactor
 from twisted.internet.error import ReactorAlreadyInstalledError
@@ -335,7 +335,7 @@ class GtkUI(object):
 
         def on_dialog_response(response):
             """User response to switching mode dialog."""
-            if response == ResponseType.Yes:
+            if response == ResponseType.YES:
                 # Turning off standalone
                 self.config['standalone'] = False
                 self._start_thinclient()
