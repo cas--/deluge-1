@@ -36,7 +36,7 @@ class BaseDialog(Gtk.Dialog):
         super(BaseDialog, self).__init__(
             title=header,
             parent=parent if parent else component.get('MainWindow').window,
-            flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+            flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT | Gtk.DialogFlags.USE_HEADER_BAR,
             buttons=buttons,
         )
 

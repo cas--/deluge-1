@@ -146,7 +146,7 @@ class CreateTorrentDialog(object):
             chooser.destroy()
             return
 
-        path = result.decode('utf-8')
+        path = result
 
         self.files_treestore.clear()
         self.files_treestore.append(None, [result, Gtk.STOCK_FILE, get_path_size(path)])
@@ -180,7 +180,7 @@ class CreateTorrentDialog(object):
             chooser.destroy()
             return
 
-        path = result.decode('utf-8')
+        path = result
 
         self.files_treestore.clear()
         self.files_treestore.append(None, [result, Gtk.STOCK_OPEN, get_path_size(path)])
@@ -298,7 +298,7 @@ class CreateTorrentDialog(object):
 
         # Get a list of webseeds
         textview_buf = self.builder.get_object('textview_webseeds').get_buffer()
-        lines = textview_buf.get_text(*textview_buf.get_bounds()).strip().split('\n')
+        lines = textview_buf.get_text(*textview_buf.get_bounds(), False).strip().split('\n')
         webseeds = []
         for line in lines:
             line = line.replace('\\', '/')  # Fix any mistyped urls.
@@ -346,12 +346,12 @@ class CreateTorrentDialog(object):
 
             deferToThread(
                 self.create_torrent,
-                path.decode('utf-8'),
+                path,
                 tracker,
                 piece_length,
                 self._on_create_torrent_progress,
                 comment,
-                result.decode('utf-8'),
+                result,
                 webseeds,
                 private,
                 author,
@@ -441,7 +441,7 @@ class CreateTorrentDialog(object):
         if response == Gtk.ResponseType.OK:
             # Create a list of trackers from the textview buffer
             textview_buf = textview.get_buffer()
-            trackers_text = textview_buf.get_text(*textview_buf.get_bounds())
+            trackers_text = textview_buf.get_text(*textview_buf.get_bounds(), False)
             log.debug('Create torrent tracker lines: %s', trackers_text)
             self.config['createtorrent.trackers'] = trackers_text.split('/n')
 

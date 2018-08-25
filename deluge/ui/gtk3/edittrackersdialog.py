@@ -29,7 +29,7 @@ def last_tier_trackers_from_liststore(trackers_liststore):
     """Create a list of tracker from existing liststore and find last tier number.
 
     Args:
-        tracker_liststore (Gtk.ListStore): A gtk.ListStore with [tier (int), tracker (str)] rows.
+        tracker_liststore (Gtk.ListStore): A Gtk.ListStore with [tier (int), tracker (str)] rows.
 
     Returns:
         tuple(int, list): A tuple containing last tier number and list of trackers.
@@ -260,7 +260,7 @@ class EditTrackersDialog(object):
 
         # Create a list of trackers from the textview widget
         textview_buf = self.builder.get_object('textview_trackers').get_buffer()
-        trackers_text = textview_buf.get_text(*textview_buf.get_bounds())
+        trackers_text = textview_buf.get_text(*textview_buf.get_bounds(), False)
 
         for tracker in trackers_tiers_from_text(trackers_text):
             # Figure out what tier number to use.. it's going to be the highest+1

@@ -220,12 +220,16 @@ class AddTorrentDialog(component.Component):
             if not magnet:
                 log.error('Invalid magnet: %s', uri)
                 continue
-            if magnet['info_hash'] in self.infos:
+            info_hash = magnet['info_hash']
+            if info_hash in self.infos:
                 log.info('Torrent already in Add Dialog list: %s', uri)
                 continue
-            new_row = self.torrent_liststore.append([magnet['info_hash'], magnet['name'], xml_escape(uri)])
-            self.files[magnet['info_hash']] = magnet['files_tree']
-            self.infos[magnet['info_hash']] = None
+            if hasattr(info_hash, 'decode'):
+                info_hash = info_hash.decode('UTF-8')
+            row_info = [info_hash, magnet['name'], xml_escape(uri)]
+            new_row = self.torrent_liststore.append(row_info)
+            self.files[info_hash] = magnet['files_tree']
+            self.infos[info_hash] = None
             self.listview_torrents.get_selection().select_iter(new_row)
             self.set_default_options()
             self.save_torrent_options(new_row)
@@ -277,9 +281,8 @@ class AddTorrentDialog(component.Component):
                     _file, _file['path'], i, _file['download'], split_files,
                 )
             self.add_files(None, split_files)
-        # FIXME add back expand_row
-        # self.listview_files.expand_row(b'0', False)
-        self.listview_files.expand_all()
+        root = Gtk.TreePath.new_first()
+        self.listview_files.expand_row(root, False)
 
     def prepare_file(self, _file, file_name, file_num, download, files_storage):
         first_slash_index = file_name.find(os.path.sep)
@@ -493,7 +496,6 @@ class AddTorrentDialog(component.Component):
     def get_file_priorities(self, torrent_id):
         # A list of priorities
         files_list = []
-
         for file_dict in self.files[torrent_id]:
             if not file_dict['download']:
                 files_list.append(0)
@@ -576,7 +578,7 @@ class AddTorrentDialog(component.Component):
 
         # Load the 'default_load_path' from the config
         self.config = ConfigManager('gtk3.conf')
-        if self.config['default_load_path'] is not None:
+        if 'default_load_path' in self.config and self.config['default_load_path'] is not None:
             chooser.set_current_folder(self.config['default_load_path'])
 
         # Run the dialog
@@ -609,7 +611,7 @@ class AddTorrentDialog(component.Component):
         response = dialog.run()
 
         if response == Gtk.ResponseType.OK:
-            url = entry.get_text().decode('utf-8')
+            url = entry.get_text()
         else:
             url = None
 
@@ -634,7 +636,7 @@ class AddTorrentDialog(component.Component):
     def add_from_url(self, url):
         dialog = Gtk.Dialog(
             _('Downloading...'),
-            flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+            flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT | Gtk.DialogFlags.USE_HEADER_BAR,
             parent=self.dialog,
         )
         dialog.set_transient_for(self.dialog)
@@ -694,10 +696,10 @@ class AddTorrentDialog(component.Component):
         dialog.show_all()
         response = dialog.run()
         infohash = entry.get_text().strip()
-        if response == Gtk.RESPONSE_OK and deluge.common.is_infohash(infohash):
+        if response == Gtk.ResponseType.OK and deluge.common.is_infohash(infohash):
             # Create a list of trackers from the textview buffer
             tview_buf = textview.get_buffer()
-            trackers_text = tview_buf.get_text(*tview_buf.get_bounds())
+            trackers_text = tview_buf.get_text(*tview_buf.get_bounds(), False)
             log.debug('Create torrent tracker lines: %s', trackers_text)
             trackers = list(trackers_tiers_from_text(trackers_text).keys())
 
@@ -925,9 +927,8 @@ class AddTorrentDialog(component.Component):
 
                 # We need to re-expand the view because it might contracted
                 # if we change the root iter
-                # FIXME add back expand_row
-                # self.listview_files.expand_row(b'0', False)
-                self.listview_files.expand_all()
+                root = Gtk.TreePath.new_first()
+                self.listview_files.expand_row(root, False)
             else:
                 # This was a simple folder rename without any splits, so just
                 # change the path for itr
