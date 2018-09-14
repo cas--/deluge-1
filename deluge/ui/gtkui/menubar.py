@@ -231,6 +231,10 @@ class MenuBar(component.Component):
         log.debug('on_menuitem_connectionmanager_activate')
         component.get('ConnectionManager').show()
 
+    def on_menuitem_find_replace_trackers_activate(self, date=None):
+        log.debug('on_menuitem_find_replace_trackers_activate')
+        component.get('FindReplaceTrackersDialog').show()
+
     # Torrent Menu #
     def on_menuitem_pause_activate(self, data=None):
         log.debug('on_menuitem_pause_activate')

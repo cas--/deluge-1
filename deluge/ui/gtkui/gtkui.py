@@ -45,6 +45,7 @@ from deluge.ui.gtkui.common import associate_magnet_links
 from deluge.ui.gtkui.connectionmanager import ConnectionManager
 from deluge.ui.gtkui.dialogs import YesNoDialog
 from deluge.ui.gtkui.filtertreeview import FilterTreeView
+from deluge.ui.gtkui.find_replace_trackers import FindReplaceTrackersDialog
 from deluge.ui.gtkui.ipcinterface import IPCInterface, process_args
 from deluge.ui.gtkui.mainwindow import MainWindow
 from deluge.ui.gtkui.menubar import MenuBar
@@ -200,6 +201,7 @@ class GtkUI(object):
         self.systemtray = SystemTray()
         self.statusbar = StatusBar()
         self.addtorrentdialog = AddTorrentDialog()
+        FindReplaceTrackersDialog()
 
         if osx_check() and WINDOWING == 'quartz':
             def nsapp_open_file(osxapp, filename):
