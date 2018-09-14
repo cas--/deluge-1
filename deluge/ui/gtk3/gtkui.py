@@ -21,7 +21,7 @@ gi.require_version('Gtk', '3.0')  # NOQA: E402
 gi.require_version('Gdk', '3.0')  # NOQA: E402
 
 # isort:imports-thirdparty
-from gi.repository.Gdk import threads_enter, threads_init, threads_leave
+from gi.repository.Gdk import Display, threads_enter, threads_init, threads_leave
 from gi.repository.GLib import set_prgname
 from gi.repository.Gtk import ResponseType
 from twisted.internet import defer, gtk3reactor
@@ -141,7 +141,7 @@ DEFAULT_PREFS = {
 
 
 def windowing(like):
-    return like.lower() in str(type(Gdk.Display.get_default())).lower()
+    return like.lower() in str(type(Display.get_default())).lower()
 
 
 class GtkUI(object):
