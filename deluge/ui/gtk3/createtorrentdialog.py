@@ -298,7 +298,10 @@ class CreateTorrentDialog(object):
 
         # Get a list of webseeds
         textview_buf = self.builder.get_object('textview_webseeds').get_buffer()
-        lines = textview_buf.get_text(*textview_buf.get_bounds(), False).strip().split('\n')
+        lines = textview_buf.get_text(
+            *textview_buf.get_bounds(),
+            include_hidden_chars=False
+        ).strip().split('\n')
         webseeds = []
         for line in lines:
             line = line.replace('\\', '/')  # Fix any mistyped urls.
@@ -441,7 +444,8 @@ class CreateTorrentDialog(object):
         if response == Gtk.ResponseType.OK:
             # Create a list of trackers from the textview buffer
             textview_buf = textview.get_buffer()
-            trackers_text = textview_buf.get_text(*textview_buf.get_bounds(), False)
+            trackers_text = textview_buf.get_text(
+                *textview_buf.get_bounds(), include_hidden_chars=False)
             log.debug('Create torrent tracker lines: %s', trackers_text)
             self.config['createtorrent.trackers'] = trackers_text.split('/n')
 

@@ -206,7 +206,11 @@ class OptionsDialog(object):
             options['move_completed_path'] = self.builder.get_object('move_completed_path_entry').get_text()
 
         buff = self.builder.get_object('auto_add_trackers').get_buffer()  # sometimes I hate gtk...
-        tracker_lst = buff.get_text(buff.get_start_iter(), buff.get_end_iter(), False).strip().split('\n')
+        tracker_lst = buff.get_text(
+            buff.get_start_iter(),
+            buff.get_end_iter(),
+            include_hidden_chars=False
+        ).strip().split('\n')
         options['auto_add_trackers'] = [x for x in tracker_lst if x]  # filter out empty lines.
 
         log.debug(options)

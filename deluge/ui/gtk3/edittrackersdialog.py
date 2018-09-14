@@ -259,8 +259,10 @@ class EditTrackersDialog(object):
         log.debug('on_button_add_ok_clicked')
 
         # Create a list of trackers from the textview widget
-        textview_buf = self.builder.get_object('textview_trackers').get_buffer()
-        trackers_text = textview_buf.get_text(*textview_buf.get_bounds(), False)
+        textview_buf = self.builder.get_object(
+            'textview_trackers').get_buffer()
+        trackers_text = textview_buf.get_text(
+            *textview_buf.get_bounds(), include_hidden_chars=False)
 
         for tracker in trackers_tiers_from_text(trackers_text):
             # Figure out what tier number to use.. it's going to be the highest+1
