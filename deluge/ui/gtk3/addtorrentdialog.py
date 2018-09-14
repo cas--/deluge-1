@@ -351,9 +351,8 @@ class AddTorrentDialog(component.Component):
                     split_files,
                 )
             self.add_files(None, split_files)
-        # FIXME add back expand_row
-        # self.listview_files.expand_row(b'0', False)
-        self.listview_files.expand_all()
+        root = Gtk.TreePath.new_first()
+        self.listview_files.expand_row(root, False)
 
     def prepare_file(self, _file, file_name, file_num, download, files_storage):
         first_slash_index = file_name.find(os.path.sep)
@@ -999,9 +998,8 @@ class AddTorrentDialog(component.Component):
 
                 # We need to re-expand the view because it might contracted
                 # if we change the root iter
-                # FIXME add back expand_row
-                # self.listview_files.expand_row(b'0', False)
-                self.listview_files.expand_all()
+                root = Gtk.TreePath.new_first()
+                self.listview_files.expand_row(root, False)
             else:
                 # This was a simple folder rename without any splits, so just
                 # change the path for itr
