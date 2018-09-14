@@ -140,6 +140,10 @@ DEFAULT_PREFS = {
 }
 
 
+def windowing(like):
+    return like.lower() in str(type(Gdk.Display.get_default())).lower()
+
+
 class GtkUI(object):
     def __init__(self, args):
         # Setup gtkbuilder/glade translation
@@ -154,7 +158,7 @@ class GtkUI(object):
             from win32api import SetConsoleCtrlHandler
             SetConsoleCtrlHandler(on_die, True)
             log.debug('Win32 "die" handler registered')
-        elif osx_check():  # TODO: Add this back: `and WINDOWING == 'quartz':`
+        elif osx_check() and windowing('quartz'):
             import gtkosx_application
             self.osxapp = gtkosx_application.gtkosx_application_get()
             self.osxapp.connect('NSApplicationWillTerminate', on_die)
@@ -205,7 +209,7 @@ class GtkUI(object):
         self.statusbar = StatusBar()
         self.addtorrentdialog = AddTorrentDialog()
 
-        if osx_check():  # TODO: Add this back: `and WINDOWING == 'quartz':`
+        if osx_check() and windowing('quartz'):
             def nsapp_open_file(osxapp, filename):
                 # Ignore command name which is raised at app launch (python opening main script).
                 if filename == sys.argv[0]:
