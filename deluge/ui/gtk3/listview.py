@@ -13,7 +13,7 @@ import logging
 
 from gi.repository import GObject, Gtk
 from gi.repository.Gdk import Event  # pylint: disable=ungrouped-imports
-from gi.repository.GObject import SignalFlags, TYPE_NONE, signal_new
+from gi.repository.GObject import TYPE_NONE, SignalFlags, signal_new
 
 from deluge.common import decode_bytes
 
