@@ -1037,7 +1037,8 @@ GtkGI = get_introspection_module('Gtk')
 
 class PathChooserComboBox(GtkGI.Box, StoredValuesPopup, GObject.GObject):
 
-    RUN_FIRST_SIGNAL_PROPS = (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (object, ))
+    RUN_FIRST_SIGNAL_PROPS = (
+        SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (object, ))
     __gsignals__ = {
         'text-changed': RUN_FIRST_SIGNAL_PROPS,
         'accelerator-set': RUN_FIRST_SIGNAL_PROPS,
