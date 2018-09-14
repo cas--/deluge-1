@@ -34,7 +34,7 @@ from deluge.ui.gtk3 import dialogs
 from .common import get_resource
 
 log = logging.getLogger(__name__)
-log.critical('erm')
+
 
 class IncompatibleOption(Exception):
     pass
