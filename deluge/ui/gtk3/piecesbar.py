@@ -21,6 +21,7 @@ from gi.repository.Gtk import DrawingArea, ProgressBar, StateFlags
 from gi.repository.Pango import SCALE, Weight
 
 # isort:imports-firstparty
+from deluge.common import PY2
 from deluge.configmanager import ConfigManager
 
 COLOR_STATES = ['missing', 'waiting', 'downloading', 'completed']
@@ -28,7 +29,7 @@ COLOR_STATES = ['missing', 'waiting', 'downloading', 'completed']
 
 class PiecesBar(DrawingArea):
     # Draw in response to an draw
-    __gsignals__ = {'draw': 'override'}
+    __gsignals__ = {'draw': 'override'} if not PY2 else {b'draw': b'override'}
 
     def __init__(self):
         super(PiecesBar, self).__init__()
