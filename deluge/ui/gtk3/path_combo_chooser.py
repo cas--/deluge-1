@@ -19,7 +19,7 @@ from gi.repository import Gdk, GObject, Gtk
 from gi.repository.GObject import SignalFlags
 
 import deluge.component as component
-from deluge.common import resource_filename
+from deluge.common import PY2, resource_filename
 from deluge.path_chooser_common import get_completion_paths
 
 
@@ -1037,21 +1037,23 @@ GtkGI = get_introspection_module('Gtk')
 
 class PathChooserComboBox(GtkGI.Box, StoredValuesPopup, GObject.GObject):
 
-    RUN_FIRST_SIGNAL_PROPS = (
-        SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (object, ))
     __gsignals__ = {
-        'text-changed': RUN_FIRST_SIGNAL_PROPS,
-        'accelerator-set': RUN_FIRST_SIGNAL_PROPS,
-        'max-rows-changed': RUN_FIRST_SIGNAL_PROPS,
-        'list-value-added': RUN_FIRST_SIGNAL_PROPS,
-        'list-value-removed': RUN_FIRST_SIGNAL_PROPS,
-        'list-values-changed': RUN_FIRST_SIGNAL_PROPS,
-        'list-values-reordered': RUN_FIRST_SIGNAL_PROPS,
-        'show-path-entry-toggled': RUN_FIRST_SIGNAL_PROPS,
-        'show-filechooser-toggled': RUN_FIRST_SIGNAL_PROPS,
-        'show-hidden-files-toggled': RUN_FIRST_SIGNAL_PROPS,
-        'show-folder-name-on-button': RUN_FIRST_SIGNAL_PROPS,
-        'auto-complete-enabled-toggled': RUN_FIRST_SIGNAL_PROPS,
+        signal if not PY2 else signal.encode():
+        (SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (object, ))
+        for signal in [
+            'text-changed',
+            'accelerator-set',
+            'max-rows-changed',
+            'list-value-added',
+            'list-value-removed',
+            'list-values-changed',
+            'list-values-reordered',
+            'show-path-entry-toggled',
+            'show-filechooser-toggled',
+            'show-hidden-files-toggled',
+            'show-folder-name-on-button',
+            'auto-complete-enabled-toggled',
+        ]
     }
 
     def __init__(self, max_visible_rows=20, auto_complete=True, use_completer_popup=True):
