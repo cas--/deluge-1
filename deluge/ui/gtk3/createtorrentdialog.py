@@ -18,7 +18,7 @@ from gi.repository.GObject import TYPE_UINT64, idle_add
 from twisted.internet.threads import deferToThread
 
 import deluge.component as component
-from deluge.common import get_path_size, is_url, resource_filename
+from deluge.common import decode_bytes, get_path_size, is_url, resource_filename
 from deluge.configmanager import ConfigManager
 from deluge.ui.client import client
 
@@ -146,7 +146,7 @@ class CreateTorrentDialog(object):
             chooser.destroy()
             return
 
-        path = result
+        path = decode_bytes(result)
 
         self.files_treestore.clear()
         self.files_treestore.append(None, [result, Gtk.STOCK_FILE, get_path_size(path)])
@@ -180,7 +180,7 @@ class CreateTorrentDialog(object):
             chooser.destroy()
             return
 
-        path = result
+        path = decode_bytes(result)
 
         self.files_treestore.clear()
         self.files_treestore.append(None, [result, Gtk.STOCK_OPEN, get_path_size(path)])
@@ -330,11 +330,11 @@ class CreateTorrentDialog(object):
             client.register_event_handler('CreateTorrentProgressEvent', on_create_torrent_progress_event)
 
             client.core.create_torrent(
-                path,
+                decode_bytes(path),
                 tracker,
                 piece_length,
                 comment,
-                result,
+                decode_bytes(result),
                 webseeds,
                 private,
                 author,
@@ -349,12 +349,12 @@ class CreateTorrentDialog(object):
 
             deferToThread(
                 self.create_torrent,
-                path,
+                decode_bytes(path),
                 tracker,
                 piece_length,
                 self._on_create_torrent_progress,
                 comment,
-                result,
+                decode_bytes(result),
                 webseeds,
                 private,
                 author,
