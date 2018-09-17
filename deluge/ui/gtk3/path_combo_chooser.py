@@ -18,7 +18,6 @@ from gi.module import get_introspection_module
 from gi.repository import Gdk, GObject, Gtk
 from gi.repository.GObject import SignalFlags
 
-import deluge.component as component
 from deluge.common import PY2, resource_filename
 from deluge.path_chooser_common import get_completion_paths
 
