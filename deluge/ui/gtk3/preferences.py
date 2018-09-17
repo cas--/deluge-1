@@ -161,18 +161,24 @@ class Preferences(component.Component):
         self.load_languages()
 
     def setup_path_choosers(self):
-        self.download_location_hbox = self.builder.get_object('hbox_download_to_path_chooser')
-        self.download_location_path_chooser = PathChooser('download_location_paths_list')
+        self.download_location_hbox = self.builder.get_object(
+            'hbox_download_to_path_chooser')
+        self.download_location_path_chooser = PathChooser(
+            'download_location_paths_list', parent=self.pref_dialog)
         self.download_location_hbox.add(self.download_location_path_chooser)
         self.download_location_hbox.show_all()
 
-        self.move_completed_hbox = self.builder.get_object('hbox_move_completed_to_path_chooser')
-        self.move_completed_path_chooser = PathChooser('move_completed_paths_list')
+        self.move_completed_hbox = self.builder.get_object(
+            'hbox_move_completed_to_path_chooser')
+        self.move_completed_path_chooser = PathChooser(
+            'move_completed_paths_list', parent=self.pref_dialog)
         self.move_completed_hbox.add(self.move_completed_path_chooser)
         self.move_completed_hbox.show_all()
 
-        self.copy_torrents_to_hbox = self.builder.get_object('hbox_copy_torrent_files_path_chooser')
-        self.copy_torrent_files_path_chooser = PathChooser('copy_torrent_files_to_paths_list')
+        self.copy_torrents_to_hbox = self.builder.get_object(
+            'hbox_copy_torrent_files_path_chooser')
+        self.copy_torrent_files_path_chooser = PathChooser(
+            'copy_torrent_files_to_paths_list', parent=self.pref_dialog)
         self.copy_torrents_to_hbox.add(self.copy_torrent_files_path_chooser)
         self.copy_torrents_to_hbox.show_all()
 

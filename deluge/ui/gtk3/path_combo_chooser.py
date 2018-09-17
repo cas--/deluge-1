@@ -1056,7 +1056,13 @@ class PathChooserComboBox(GtkGI.Box, StoredValuesPopup, GObject.GObject):
         ]
     }
 
-    def __init__(self, max_visible_rows=20, auto_complete=True, use_completer_popup=True):
+    def __init__(
+        self,
+        max_visible_rows=20,
+        auto_complete=True,
+        use_completer_popup=True,
+        parent=None,
+    ):
         GtkGI.Box.__init__(self)
         GObject.GObject.__init__(self)
         self.list_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -1068,6 +1074,7 @@ class PathChooserComboBox(GtkGI.Box, StoredValuesPopup, GObject.GObject):
         self.show_folder_name_on_button = False
         self.setting_accelerator_key = False
         self.builder = Gtk.Builder()
+        self.parent = parent
         self.popup_buttonbox = self.builder.get_object('buttonbox')
         self.builder.add_from_file(resource_filename(
             __package__, os.path.join('glade', 'path_combo_chooser.ui'),
@@ -1077,7 +1084,7 @@ class PathChooserComboBox(GtkGI.Box, StoredValuesPopup, GObject.GObject):
         self.open_filechooser_dialog_button = self.builder.get_object('button_open_dialog')
         self.filechooser_button = self.open_filechooser_dialog_button
         self.filechooserdialog = self.builder.get_object('filechooserdialog')
-        self.filechooserdialog.set_transient_for(component.get('MainWindow').window)
+        self.filechooserdialog.set_transient_for(self.parent)
         self.filechooser_widget = self.builder.get_object('filechooser_widget')
         self.folder_name_label = self.builder.get_object('folder_name_label')
         self.default_text = None
@@ -1435,7 +1442,7 @@ class PathChooserComboBox(GtkGI.Box, StoredValuesPopup, GObject.GObject):
         self.visible_rows_label = self.builder.get_object('visible_rows_label')
         self.show_hidden_files_checkbutton = self.builder.get_object('show_hidden_files_checkbutton')
         self.show_folder_name_on_button_checkbutton = self.builder.get_object('show_folder_name_on_button_checkbutton')
-        self.config_dialog.set_transient_for(component.get('MainWindow').window)
+        self.config_dialog.set_transient_for(self.parent)
 
         def on_close(widget, event=None):
             if not self.setting_accelerator_key:
