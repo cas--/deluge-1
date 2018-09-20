@@ -31,7 +31,7 @@ try:
     import gi
     gi.require_version('Wnck', '3.0')
     from gi.repository import Wnck
-except ImportError:
+except ValueError:
     Wnck = None
 
 
