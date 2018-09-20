@@ -159,10 +159,10 @@ class DelugeEntryTestCase(BaseTestCase):
 class GtkUIBaseTestCase(UIBaseTestCase):
     """Implement all GtkUI tests here"""
 
-    def test_start_gtkui(self):
+    def test_start_gtk3ui(self):
         self.patch(sys, 'argv', utf8_encode_structure(self.var['sys_arg_cmd']))
 
-        from deluge.ui.gtkui import gtkui
+        from deluge.ui.gtk3 import gtkui
         with mock.patch.object(gtkui.GtkUI, 'start', autospec=True):
             self.exec_command()
 
@@ -174,9 +174,9 @@ class GtkUIDelugeScriptEntryTestCase(BaseTestCase, GtkUIBaseTestCase):
         super(GtkUIDelugeScriptEntryTestCase, self).__init__(testname)
         GtkUIBaseTestCase.__init__(self)
 
-        self.var['cmd_name'] = 'deluge gtk'
+        self.var['cmd_name'] = 'deluge gtk3'
         self.var['start_cmd'] = ui_entry.start_ui
-        self.var['sys_arg_cmd'] = ['./deluge', 'gtk']
+        self.var['sys_arg_cmd'] = ['./deluge', 'gtk3']
 
     def set_up(self):
         return GtkUIBaseTestCase.set_up(self)
@@ -191,10 +191,10 @@ class GtkUIScriptEntryTestCase(BaseTestCase, GtkUIBaseTestCase):
     def __init__(self, testname):
         super(GtkUIScriptEntryTestCase, self).__init__(testname)
         GtkUIBaseTestCase.__init__(self)
-        from deluge.ui import gtkui
-        self.var['cmd_name'] = 'deluge-gtk'
-        self.var['start_cmd'] = gtkui.start
-        self.var['sys_arg_cmd'] = ['./deluge-gtk']
+        from deluge.ui import gtk3
+        self.var['cmd_name'] = 'deluge-gtk3'
+        self.var['start_cmd'] = gtk3.start
+        self.var['sys_arg_cmd'] = ['./deluge-gtk3']
 
     def set_up(self):
         return GtkUIBaseTestCase.set_up(self)
