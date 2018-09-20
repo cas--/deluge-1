@@ -14,6 +14,7 @@ import os
 
 from deluge.common import PY2
 
+
 def is_hidden(filepath):
     def has_hidden_attribute(filepath):
         import win32api
