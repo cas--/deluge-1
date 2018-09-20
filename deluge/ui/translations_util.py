@@ -25,6 +25,7 @@ log.addHandler(logging.NullHandler())  # Silence: No handlers could be found for
 
 I18N_DOMAIN = 'deluge'
 
+
 def set_dummy_trans(warn_msg=None):
 
     def _func(*txt):
@@ -114,8 +115,10 @@ def setup_translations():
             libintl = ctypes.cdll.LoadLibrary('libintl.dylib')
 
         if libintl:
-            libintl.bindtextdomain(I18N_DOMAIN,
-                translations_path.encode(sys.getfilesystemencoding()))
+            libintl.bindtextdomain(
+                I18N_DOMAIN,
+                translations_path.encode(sys.getfilesystemencoding()),
+            )
             libintl.textdomain(I18N_DOMAIN)
             libintl.bind_textdomain_codeset(I18N_DOMAIN, 'UTF-8')
             libintl.gettext.restype = ctypes.c_char_p
