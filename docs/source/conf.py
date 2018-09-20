@@ -31,43 +31,6 @@ __builtin__.__dict__['_n'] = lambda s, p, n: s if n == 1 else p
 # absolute, like shown here.
 sys.path.append(os.path.abspath(os.path.join(os.path.join(os.path.dirname(__file__), os.path.pardir), os.path.pardir)))
 
-
-class Mock(object):
-
-    __all__ = []
-
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return Mock()
-
-    @classmethod
-    def __getattr__(cls, name):
-        if name in ('__file__', '__path__'):
-            return '/dev/null'
-        elif name[0] == name[0].upper():
-            mock_type = type(name, (), {})
-            mock_type.__module__ = __name__
-            return mock_type
-        else:
-            return Mock()
-
-    def __or__(self, __):
-        return Mock()
-
-
-MOCK_MODULES = [
-    'deluge.ui.gtk3.gtkui', 'deluge._libtorrent',
-    'libtorrent', 'psyco',
-    'pygtk', 'gtk', 'gobject', 'gtk.gdk', 'pango', 'cairo', 'pangocairo', 'gi'
-    'curses', 'win32api', 'win32file', 'win32process', 'win32pipe',
-    'pywintypes', 'win32con', 'win32event',
-]
-
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = Mock()
-
 # General configuration
 # ---------------------
 
@@ -78,6 +41,14 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.napoleon',
     'sphinx.ext.coverage',
+]
+
+autodoc_mock_imports = [
+    'deluge._libtorrent',
+    'libtorrent', 'psyco',
+    'gi',
+    'curses', 'win32api', 'win32file', 'win32process', 'win32pipe',
+    'pywintypes', 'win32con', 'win32event',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
