@@ -26,8 +26,8 @@ try:
 except ImportError as err:
     libs_available = False
     TYPE_UINT64 = 'Whatever'
-    import traceback
-    traceback.print_exc()
+    # ~ import traceback
+    # ~ traceback.print_exc()
 else:
     libs_available = True
     from deluge.ui.gtkui.mainwindow import MainWindow  # pylint: disable=ungrouped-imports

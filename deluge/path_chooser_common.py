@@ -10,24 +10,31 @@
 
 from __future__ import unicode_literals
 
+import ctypes
 import os
+
+from deluge.common import PY2, windows_check
 
 
 def is_hidden(filepath):
     def has_hidden_attribute(filepath):
-        import win32api
-        import win32con
-        try:
-            attribute = win32api.GetFileAttributes(filepath)
-            return attribute & (win32con.FILE_ATTRIBUTE_HIDDEN | win32con.FILE_ATTRIBUTE_SYSTEM)
-        except (AttributeError, AssertionError):
+        if not windows_check():
             return False
 
+        try:
+            if not PY2:
+                attrs = os.stat(filepath).st_file_attributes
+            else:
+                attrs = ctypes.windll.kernel32.GetFileAttributesW(filepath)
+            assert attrs != -1
+            # FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM
+            result = bool(attrs & (2 | 4))
+        except (AttributeError, AssertionError):
+            result = False
+        return result
+
     name = os.path.basename(os.path.abspath(filepath))
-    # Windows
-    if os.name == 'nt':
-        return has_hidden_attribute(filepath)
-    return name.startswith('.')
+    return name.startswith('.') or has_hidden_attribute(filepath)
 
 
 def get_completion_paths(args):
