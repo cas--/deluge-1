@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+## -*- coding: utf-8 -*-
 #
 # Copyright (C) 2007, 2008 Andrew Resch <andrewresch@gmail.com>
 #
@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 import logging
 import os
 
-from gi.repository.Gtk import Builder, RadioMenuItem, StatusIcon
+from gi.repository.Gtk import Builder, RadioMenuItem, StatusIcon, IconTheme
 
 import deluge.component as component
 from deluge.common import fspeed, get_pixmap, osx_check, resource_filename, windows_check
@@ -22,10 +22,6 @@ from deluge.ui.client import client
 from .common import build_menu_radio_list, get_logo
 from .dialogs import OtherDialog
 
-try:
-    import appindicator
-except ImportError:
-    appindicator = None
 
 log = logging.getLogger(__name__)
 
@@ -49,9 +45,6 @@ class SystemTray(component.Component):
             'separatormenuitem4',
         ]
         self.config.register_set_function('enable_system_tray', self.on_enable_system_tray_set)
-        # bit of a hack to prevent function from doing something on startup
-        self.__enabled_set_once = False
-        self.config.register_set_function('enable_appindicator', self.on_enable_appindicator_set)
 
         self.max_download_speed = -1.0
         self.download_rate = 0.0
@@ -73,53 +66,30 @@ class SystemTray(component.Component):
 
         self.tray_menu = self.builder.get_object('tray_menu')
 
-        if appindicator and self.config['enable_appindicator']:
-            log.debug('Enabling the Application Indicator...')
-            self.indicator = appindicator.Indicator(
-                'deluge',
-                'deluge',
-                appindicator.CATEGORY_APPLICATION_STATUS,
-            )
-            try:
-                self.indicator.set_property('title', _('Deluge'))
-            except TypeError:
-                # Catch 'title' property error for previous appindicator versions
-                pass
-            # Pass the menu to the Application Indicator
-            self.indicator.set_menu(self.tray_menu)
-
-            # Make sure the status of the Show Window MenuItem is correct
-            self._sig_win_hide = self.mainwindow.window.connect('hide', self._on_window_hide)
-            self._sig_win_show = self.mainwindow.window.connect('show', self._on_window_show)
-            if self.mainwindow.visible():
-                self.builder.get_object('menuitem_show_deluge').set_active(True)
-            else:
-                self.builder.get_object('menuitem_show_deluge').set_active(False)
-
-            # Show the Application Indicator
-            self.indicator.set_status(appindicator.STATUS_ACTIVE)
-
+        log.debug('Enabling the system tray icon..')
+        if windows_check() or osx_check():
+            self.tray = StatusIcon.new_from_pixbuf(get_logo(32))
+        elif IconTheme.get_default().has_icon('deluge-panel'):
+            self.tray = StatusIcon.new_from_icon_name('deluge-panel')
         else:
-            log.debug('Enabling the system tray icon..')
-            if windows_check() or osx_check():
-                self.tray = StatusIcon.new_from_pixbuf(get_logo(32))
-            else:
-                self.tray = StatusIcon.new_from_icon_name('deluge-panel')
+            self.tray = StatusIcon.new_from_icon_name('deluge-deluge')
 
-            self.tray.connect('activate', self.on_tray_clicked)
-            self.tray.connect('popup-menu', self.on_tray_popup)
+        self.tray.connect('activate', self.on_tray_clicked)
+        self.tray.connect('popup-menu', self.on_tray_popup)
 
-        self.builder.get_object('download-limit-image').set_from_file(get_pixmap('downloading16.png'))
-        self.builder.get_object('upload-limit-image').set_from_file(get_pixmap('seeding16.png'))
+        self.builder.get_object('download-limit-image').set_from_file(get_pixmap('deluge-downloading.svg'))
+        self.builder.get_object('upload-limit-image').set_from_file(get_pixmap('deluge-seeding.svg'))
 
         client.register_event_handler('ConfigValueChangedEvent', self.config_value_changed)
+        client.register_event_handler('SessionPausedEvent', self.on_sessionpaused_event)
+        client.register_event_handler('SessionResumedEvent', self.on_sessionresumed_event)
         if client.connected():
             # We're connected so we need to get some values from the core
             self.__start()
         else:
             # Hide menu widgets because we're not connected to a host.
             for widget in self.hide_widget_list:
-                self.builder.get_object(widget).hide()
+                self.builder.get_object(widget).set_sensitive(False)
 
     def __start(self):
         if self.config['enable_system_tray']:
@@ -135,7 +105,7 @@ class SystemTray(component.Component):
 
             # Show widgets in the hide list because we've connected to a host
             for widget in self.hide_widget_list:
-                self.builder.get_object(widget).show()
+                self.builder.get_object(widget).set_sensitive(True)
 
             # Build the bandwidth speed limit menus
             self.build_tray_bwsetsubmenu()
@@ -144,17 +114,29 @@ class SystemTray(component.Component):
             def update_config_values(configs):
                 self._on_max_download_speed(configs['max_download_speed'])
                 self._on_max_upload_speed(configs['max_upload_speed'])
+
             client.core.get_config_values(['max_download_speed', 'max_upload_speed']).addCallback(update_config_values)
+            client.core.is_session_paused().addCallback(self.on_is_session_paused)
+
+    def on_is_session_paused(self, state):
+        self.builder.get_object('menuitem_pause_session').set_sensitive(not state)
+        self.builder.get_object('menuitem_resume_session').set_sensitive(state)
+
+    def on_sessionpaused_event(self):
+        self.on_is_session_paused(True)
+
+    def on_sessionresumed_event(self):
+        self.on_is_session_paused(False)
 
     def start(self):
         self.__start()
 
     def stop(self):
-        if self.config['enable_system_tray'] and not self.config['enable_appindicator']:
+        if self.config['enable_system_tray']:
             try:
                 # Hide widgets in hide list because we're not connected to a host
                 for widget in self.hide_widget_list:
-                    self.builder.get_object(widget).hide()
+                    self.builder.get_object(widget).set_sensitive(False)
             except Exception as ex:
                 log.debug('Unable to hide system tray menu widgets: %s', ex)
 
@@ -162,10 +144,7 @@ class SystemTray(component.Component):
 
     def shutdown(self):
         if self.config['enable_system_tray']:
-            if appindicator and self.config['enable_appindicator']:
-                self.indicator.set_status(appindicator.STATUS_PASSIVE)
-            else:
-                self.tray.set_visible(False)
+            self.tray.set_visible(False)
 
     def send_status_request(self):
         client.core.get_session_status([
@@ -190,19 +169,11 @@ class SystemTray(component.Component):
             self.build_tray_bwsetsubmenu()
 
     def _on_get_session_status(self, status):
-        self.download_rate = fspeed(status['payload_download_rate'], shortform=True)
-        self.upload_rate = fspeed(status['payload_upload_rate'], shortform=True)
+        self.download_rate = fspeed(status['payload_download_rate'], shortform=False)
+        self.upload_rate = fspeed(status['payload_upload_rate'], shortform=False)
 
     def update(self):
         if not self.config['enable_system_tray']:
-            return
-
-        # Tool tip text not available for appindicator
-        if appindicator and self.config['enable_appindicator']:
-            if self.mainwindow.visible():
-                self.builder.get_object('menuitem_show_deluge').set_active(True)
-            else:
-                self.builder.get_object('menuitem_show_deluge').set_active(False)
             return
 
         # Set the tool tip text
@@ -212,11 +183,11 @@ class SystemTray(component.Component):
         if max_download_speed == -1:
             max_download_speed = _('Unlimited')
         else:
-            max_download_speed = '%s %s' % (max_download_speed, _('K/s'))
+            max_download_speed = '%s %s' % (max_download_speed, _('KiB/s'))
         if max_upload_speed == -1:
             max_upload_speed = _('Unlimited')
         else:
-            max_upload_speed = '%s %s' % (max_upload_speed, _('K/s'))
+            max_upload_speed = '%s %s' % (max_upload_speed, _('KiB/s'))
 
         msg = '%s\n%s: %s (%s)\n%s: %s (%s)' % (
             _('Deluge'), _('Down'), self.download_rate,
@@ -233,14 +204,14 @@ class SystemTray(component.Component):
         submenu_bwdownset = build_menu_radio_list(
             self.config['tray_download_speed_list'], self.on_tray_setbwdown,
             self.max_download_speed,
-            _('K/s'), show_notset=True, show_other=True,
+            _('KiB/s'), show_notset=True, show_other=True,
         )
 
         # Create the Upload speed list sub-menu
         submenu_bwupset = build_menu_radio_list(
             self.config['tray_upload_speed_list'], self.on_tray_setbwup,
             self.max_upload_speed,
-            _('K/s'), show_notset=True, show_other=True,
+            _('KiB/s'), show_notset=True, show_other=True,
         )
         # Add the sub-menus to the tray menu
         self.builder.get_object('menuitem_download_limit').set_submenu(
@@ -254,29 +225,20 @@ class SystemTray(component.Component):
         submenu_bwdownset.show_all()
         submenu_bwupset.show_all()
 
-    def disable(self, invert_app_ind_conf=False):
-        """Disables the system tray icon or appindicator."""
+    def disable(self):
+        """Disables the system tray icon."""
         try:
-            if invert_app_ind_conf:
-                app_ind_conf = not self.config['enable_appindicator']
-            else:
-                app_ind_conf = self.config['enable_appindicator']
-            if appindicator and app_ind_conf:
-                if hasattr(self, '_sig_win_hide'):
-                    self.mainwindow.window.disconnect(self._sig_win_hide)
-                    self.mainwindow.window.disconnect(self._sig_win_show)
-                    log.debug('Disabling the application indicator..')
-
-                self.indicator.set_status(appindicator.STATUS_PASSIVE)
-                del self.indicator
-            else:
-                log.debug('Disabling the system tray icon..')
-                self.tray.set_visible(False)
-                del self.tray
+            log.debug('Disabling the system tray icon..')
+            self.tray.set_visible(False)
+            del self.tray
             del self.builder
             del self.tray_menu
         except Exception as ex:
             log.debug('Unable to disable system tray: %s', ex)
+
+        client.register_event_handler('ConfigValueChangedEvent', self.config_value_changed)
+        client.deregister_event_handler('SessionPausedEvent', self.on_sessionpaused_event)
+        client.deregister_event_handler('SessionResumedEvent', self.on_sessionresumed_event)
 
     def blink(self, value):
         try:
@@ -292,13 +254,6 @@ class SystemTray(component.Component):
             self.enable()
         else:
             self.disable()
-
-    def on_enable_appindicator_set(self, key, value):
-        """Called whenever the 'enable_appindicator' config key is modified"""
-        if self.__enabled_set_once:
-            self.disable(True)
-            self.enable()
-        self.__enabled_set_once = True
 
     def on_tray_clicked(self, icon):
         """Called when the tray icon is left clicked."""
@@ -322,15 +277,8 @@ class SystemTray(component.Component):
         if windows_check() or osx_check():
             popup_function = None
             button = 0
-        self.tray_menu.popup(
-            None,
-            None,
-            None,
-            popup_function,
-            status_icon,
-            button,
-            activate_time,
-        )
+        # FIXME why was status_icon removed??
+        self.tray_menu.popup(None, None, popup_function, self.tray, button, activate_time)
 
     def on_menuitem_show_deluge_activate(self, menuitem):
         log.debug('on_menuitem_show_deluge_activate')
@@ -367,7 +315,7 @@ class SystemTray(component.Component):
         self.setbwlimit(
             widget, _('Download Speed Limit'), _('Set the maximum download speed'),
             'max_download_speed', 'tray_download_speed_list', self.max_download_speed,
-            'downloading.svg',
+            'deluge-downloading',
         )
 
     def on_tray_setbwup(self, widget, data=None):
@@ -378,7 +326,7 @@ class SystemTray(component.Component):
         self.setbwlimit(
             widget, _('Upload Speed Limit'), _('Set the maximum upload speed'),
             'max_upload_speed', 'tray_upload_speed_list', self.max_upload_speed,
-            'seeding.svg',
+            'deluge-seeding',
         )
 
     def _on_window_hide(self, widget, data=None):
@@ -405,7 +353,7 @@ class SystemTray(component.Component):
         if widget.get_name() == 'unlimited':
             set_value(-1)
         elif widget.get_name() == 'other':
-            dialog = OtherDialog(header, text, _('K/s'), image, default)
+            dialog = OtherDialog(header, text, _('KiB/s'), image, default)
             dialog.run().addCallback(set_value)
         else:
             set_value(widget.get_children()[0].get_text().split(' ')[0])

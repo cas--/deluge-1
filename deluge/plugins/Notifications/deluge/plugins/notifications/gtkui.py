@@ -17,7 +17,7 @@ from __future__ import unicode_literals
 import logging
 from os.path import basename
 
-import gtk
+from gi.repository import Gtk
 from twisted.internet import defer
 
 import deluge.common
@@ -39,7 +39,9 @@ except ImportError:
     SOUND_AVAILABLE = False
 
 try:
-    import pynotify
+    import gi
+    gi.require_version('Notify', '0.7')
+    from gi.repository import Notify
     POPUP_AVAILABLE = True
     if deluge.common.windows_check():
         POPUP_AVAILABLE = False
@@ -175,10 +177,8 @@ class GtkUiNotifications(CustomNotifications):
         if not POPUP_AVAILABLE:
             return defer.fail(_('pynotify is not installed'))
 
-        if pynotify.init('Deluge'):
-            icon = gtk.gdk.pixbuf_new_from_file_at_size(deluge.common.get_pixmap('deluge.svg'), 48, 48)
-            self.note = pynotify.Notification(title, message)
-            self.note.set_icon_from_pixbuf(icon)
+        if Notify.init('Deluge'):
+            self.note = Notify.Notification.new(title, message, 'deluge')
             if not self.note.show():
                 err_msg = _('pynotify failed to show notification')
                 log.warning(err_msg)
@@ -246,9 +246,9 @@ class GtkUI(Gtk3PluginBase, GtkUiNotifications):
 
     def enable(self):
         self.config = deluge.configmanager.ConfigManager(
-            'notifications-gtk.conf', DEFAULT_PREFS,
+            'notifications-Gtk.conf', DEFAULT_PREFS,
         )
-        self.builder = gtk.Builder()
+        self.builder = Gtk.Builder()
         self.builder.add_from_file(get_resource('config.ui'))
         self.builder.get_object('smtp_port').set_value(25)
         self.prefs = self.builder.get_object('prefs_box')
@@ -340,12 +340,12 @@ class GtkUI(Gtk3PluginBase, GtkUiNotifications):
         treeview_selection.connect(
             'changed', self.on_recipients_treeview_selection_changed,
         )
-        self.recipients_model = gtk.ListStore(str, bool)
+        self.recipients_model = Gtk.ListStore(str, bool)
 
-        renderer = gtk.CellRendererText()
+        renderer = Gtk.CellRendererText()
         renderer.connect('edited', self.on_cell_edited, self.recipients_model)
-        renderer.set_data('recipient', RECIPIENT_FIELD)
-        column = gtk.TreeViewColumn(
+        setattr(renderer, 'recipient', RECIPIENT_FIELD)
+        column = Gtk.TreeViewColumn(
             'Recipients', renderer,
             text=RECIPIENT_FIELD,
             editable=RECIPIENT_EDIT,
@@ -363,28 +363,28 @@ class GtkUI(Gtk3PluginBase, GtkUiNotifications):
         )
 
         self.sounds_treeview.set_tooltip_column(SND_EVENT_DOC)
-        self.sounds_model = gtk.ListStore(str, str, str, str)
+        self.sounds_model = Gtk.ListStore(str, str, str, str)
 
-        renderer = gtk.CellRendererText()
-        renderer.set_data('event', SND_EVENT)
-        column = gtk.TreeViewColumn('Event', renderer, text=SND_EVENT)
+        renderer = Gtk.CellRendererText()
+        setattr(renderer, 'event', SND_EVENT)
+        column = Gtk.TreeViewColumn('Event', renderer, text=SND_EVENT)
         column.set_expand(True)
         self.sounds_treeview.append_column(column)
 
-        renderer = gtk.CellRendererText()
-        renderer.set_data('event_doc', SND_EVENT_DOC)
-        column = gtk.TreeViewColumn('Doc', renderer, text=SND_EVENT_DOC)
+        renderer = Gtk.CellRendererText()
+        setattr(renderer, 'event_doc', SND_EVENT_DOC)
+        column = Gtk.TreeViewColumn('Doc', renderer, text=SND_EVENT_DOC)
         column.set_property('visible', False)
         self.sounds_treeview.append_column(column)
 
-        renderer = gtk.CellRendererText()
-        renderer.set_data('sound_name', SND_NAME)
-        column = gtk.TreeViewColumn('Name', renderer, text=SND_NAME)
+        renderer = Gtk.CellRendererText()
+        setattr(renderer, 'sound_name', SND_NAME)
+        column = Gtk.TreeViewColumn('Name', renderer, text=SND_NAME)
         self.sounds_treeview.append_column(column)
 
-        renderer = gtk.CellRendererText()
-        renderer.set_data('sound_path', SND_PATH)
-        column = gtk.TreeViewColumn('Path', renderer, text=SND_PATH)
+        renderer = Gtk.CellRendererText()
+        setattr(renderer, 'sound_path', SND_PATH)
+        column = Gtk.TreeViewColumn('Path', renderer, text=SND_PATH)
         column.set_property('visible', False)
         self.sounds_treeview.append_column(column)
 
@@ -398,45 +398,45 @@ class GtkUI(Gtk3PluginBase, GtkUiNotifications):
             'changed', self.on_subscriptions_treeview_selection_changed,
         )
         self.subscriptions_treeview.set_tooltip_column(SUB_EVENT_DOC)
-        self.subscriptions_model = gtk.ListStore(str, str, bool, bool, bool, bool)
+        self.subscriptions_model = Gtk.ListStore(str, str, bool, bool, bool, bool)
 
-        renderer = gtk.CellRendererText()
-        renderer.set_data('event', SUB_EVENT)
-        column = gtk.TreeViewColumn('Event', renderer, text=SUB_EVENT)
+        renderer = Gtk.CellRendererText()
+        setattr(renderer, 'event', SUB_EVENT)
+        column = Gtk.TreeViewColumn('Event', renderer, text=SUB_EVENT)
         column.set_expand(True)
         self.subscriptions_treeview.append_column(column)
 
-        renderer = gtk.CellRendererText()
-        renderer.set_data('event_doc', SUB_EVENT)
-        column = gtk.TreeViewColumn('Doc', renderer, text=SUB_EVENT_DOC)
+        renderer = Gtk.CellRendererText()
+        setattr(renderer, 'event_doc', SUB_EVENT)
+        column = Gtk.TreeViewColumn('Doc', renderer, text=SUB_EVENT_DOC)
         column.set_property('visible', False)
         self.subscriptions_treeview.append_column(column)
 
-        renderer = gtk.CellRendererToggle()
+        renderer = Gtk.CellRendererToggle()
         renderer.set_property('activatable', True)
         renderer.connect('toggled', self._on_email_col_toggled)
-        column = gtk.TreeViewColumn('Email', renderer, active=SUB_NOT_EMAIL)
+        column = Gtk.TreeViewColumn('Email', renderer, active=SUB_NOT_EMAIL)
         column.set_clickable(True)
         self.subscriptions_treeview.append_column(column)
 
-        renderer = gtk.CellRendererToggle()
+        renderer = Gtk.CellRendererToggle()
         renderer.set_property('activatable', True)
         renderer.connect('toggled', self._on_popup_col_toggled)
-        column = gtk.TreeViewColumn('Popup', renderer, active=SUB_NOT_POPUP)
+        column = Gtk.TreeViewColumn('Popup', renderer, active=SUB_NOT_POPUP)
         column.set_clickable(True)
         self.subscriptions_treeview.append_column(column)
 
-        renderer = gtk.CellRendererToggle()
+        renderer = Gtk.CellRendererToggle()
         renderer.set_property('activatable', True)
         renderer.connect('toggled', self._on_blink_col_toggled)
-        column = gtk.TreeViewColumn('Blink', renderer, active=SUB_NOT_BLINK)
+        column = Gtk.TreeViewColumn('Blink', renderer, active=SUB_NOT_BLINK)
         column.set_clickable(True)
         self.subscriptions_treeview.append_column(column)
 
-        renderer = gtk.CellRendererToggle()
+        renderer = Gtk.CellRendererToggle()
         renderer.set_property('activatable', True)
         renderer.connect('toggled', self._on_sound_col_toggled)
-        column = gtk.TreeViewColumn('Sound', renderer, active=SUB_NOT_SOUND)
+        column = Gtk.TreeViewColumn('Sound', renderer, active=SUB_NOT_SOUND)
         column.set_clickable(True)
         self.subscriptions_treeview.append_column(column)
         self.subscriptions_treeview.set_model(self.subscriptions_model)
@@ -668,19 +668,19 @@ class GtkUI(Gtk3PluginBase, GtkUiNotifications):
         model, selected_iter = selection.get_selected()
         if selected_iter:
             path = model.get(selected_iter, SND_PATH)[0]
-            dialog = gtk.FileChooserDialog(
+            dialog = Gtk.FileChooserDialog(
                 title=_('Choose Sound File'),
                 buttons=(
-                    gtk.STOCK_CANCEL,
-                    gtk.RESPONSE_CANCEL,
-                    gtk.STOCK_OPEN,
-                    gtk.RESPONSE_OK,
+                    Gtk.STOCK_CANCEL,
+                    Gtk.ResponseType.CANCEL,
+                    Gtk.STOCK_OPEN,
+                    Gtk.ResponseType.OK,
                 ),
             )
             dialog.set_filename(path)
 
             def update_model(response):
-                if response == gtk.RESPONSE_OK:
+                if response == Gtk.ResponseType.OK:
                     new_filename = dialog.get_filename()
                     dialog.destroy()
                     log.debug(new_filename)

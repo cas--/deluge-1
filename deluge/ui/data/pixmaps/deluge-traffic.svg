@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="16"
+   height="16.000004"
+   id="svg2517"
+   sodipodi:version="0.32"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   sodipodi:docname="traffic.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape"
+   inkscape:export-filename="/home/andrew/Projects/deluge/trunk/deluge/data/pixmaps/traffic16.png"
+   inkscape:export-xdpi="2.459017"
+   inkscape:export-ydpi="2.459017"
+   version="1.1">
+  <defs
+     id="defs2519">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective2525" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10000"
+     guidetolerance="10"
+     objecttolerance="10"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="63.356767"
+     inkscape:cx="6.3789584"
+     inkscape:cy="6.667087"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:window-width="3200"
+     inkscape:window-height="1677"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3336"
+       empspacing="1"
+       dotted="false"
+       originx="-56.263565"
+       originy="-55.822108" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata2522">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-56.263565,-980.54007)">
+    <path
+       style="opacity:1;fill:#4c90e8;fill-opacity:1;stroke:#000000;stroke-width:0.53556615;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 66.312547,980.80784 c -1.861217,1.8259 -3.730002,3.64708 -5.591219,5.47298 1.001416,0.002 2.005335,-0.002 3.006757,0 0,2.16216 0,4.32431 0,6.48647 1.779277,0 3.55856,0 5.337839,0 0,-2.15653 0,-4.31305 0,-6.46958 0.922655,0.002 1.847616,-0.002 2.770272,0 -1.840667,-1.83267 -3.68299,-3.6572 -5.523649,-5.48987 z"
+       id="rect2634"
+       inkscape:export-filename="/home/andrew/Projects/deluge/trunk/deluge/data/pixmaps/traffic32.png"
+       inkscape:export-xdpi="4.9180341"
+       inkscape:export-ydpi="4.9180341"
+       inkscape:connector-curvature="0" />
+    <path
+       style="opacity:1;fill:#16c816;fill-opacity:1;stroke:#000000;stroke-width:0.53556615;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 62.282528,996.2723 c -1.861218,-1.82591 -3.730002,-3.64708 -5.591219,-5.47298 1.001417,-0.002 2.005336,0.002 3.006758,0 0,-2.16214 0,-4.32431 0,-6.48647 1.779276,0 3.558559,0 5.337841,0 0,2.15653 0,4.31306 0,6.46958 0.922654,-0.002 1.847616,0.002 2.770272,0 -1.840666,1.83266 -3.682992,3.6572 -5.523652,5.48987 z"
+       id="path2528"
+       inkscape:export-filename="/home/andrew/Projects/deluge/trunk/deluge/data/pixmaps/traffic32.png"
+       inkscape:export-xdpi="4.9180341"
+       inkscape:export-ydpi="4.9180341"
+       inkscape:connector-curvature="0" />
+  </g>
+</svg>

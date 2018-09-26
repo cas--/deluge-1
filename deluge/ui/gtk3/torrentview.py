@@ -278,7 +278,7 @@ class TorrentView(ListView, component.Component):
         self.add_func_column(
             _('Downloaded'), funcs.cell_data_size,
             [TYPE_UINT64],
-            status_field=['all_time_download'], default=False,
+            status_field=['total_done'], default=False,
         )
         self.add_func_column(
             _('Uploaded'), funcs.cell_data_size,
@@ -581,6 +581,7 @@ class TorrentView(ListView, component.Component):
                 to_update = []
                 for i, status_field in fields_to_update:
                     row_value = status[torrent_id][status_field]
+                    # FIXME: Seeing UnicodeWarning??
                     if row[i] != row_value:
                         to_update.append(i)
                         to_update.append(row_value)
@@ -693,9 +694,9 @@ class TorrentView(ListView, component.Component):
         """This is a callback for showing the right-click context menu."""
         log.debug('on_button_press_event')
         # We only care about right-clicks
-        if event.button == 3:
-            x, y = event.get_coords()
-            path = self.treeview.get_path_at_pos(int(x), int(y))
+        if event.button == 3 and event.window == self.treeview.get_bin_window():
+            x, y = map(int, [event.x, event.y])
+            path = self.treeview.get_path_at_pos(x, y)
             if not path:
                 return
             row = self.model_filter.get_iter(path[0])

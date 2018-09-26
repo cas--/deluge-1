@@ -97,7 +97,9 @@ class MainWindow(component.Component):
         self.window = self.main_builder.get_object('main_window')
         self.window.set_icon(get_deluge_icon())
         self.vpaned = self.main_builder.get_object('vpaned')
+        self.hpaned = self.main_builder.get_object('main_window_hpaned')
         self.initial_vpaned_position = self.config['window_pane_position']
+        self.initial_hpaned_position = self.config['sidebar_position']
 
         # Keep a list of components to pause and resume when changing window state.
         self.child_components = ['TorrentView', 'StatusBar', 'TorrentDetails']
@@ -121,6 +123,7 @@ class MainWindow(component.Component):
         self.window.connect('delete-event', self.on_window_delete_event)
         self.window.connect('drag-data-received', self.on_drag_data_received_event)
         self.vpaned.connect('notify::position', self.on_vpaned_position_event)
+        self.hpaned.connect('notify::position', self.on_hpaned_position_event)
         self.window.connect('draw', self.on_expose_event)
 
         self.config.register_set_function('show_rate_in_title', self._on_set_show_rate_in_title, apply_now=False)
@@ -132,7 +135,6 @@ class MainWindow(component.Component):
 
     def first_show(self):
         self.main_builder.prev_connect_signals(self.gtk_builder_signals_holder)
-        self.vpaned.set_position(self.initial_vpaned_position)
         if not (
                 self.config['start_in_tray'] and self.config['enable_system_tray']
         ) and not self.window.get_property('visible'):
@@ -141,6 +143,9 @@ class MainWindow(component.Component):
 
         while Gtk.events_pending():
             Gtk.main_iteration()
+
+        self.hpaned.set_position(self.initial_hpaned_position)
+        self.vpaned.set_position(self.initial_vpaned_position)
 
     def show(self):
         component.resume(self.child_components)
@@ -264,6 +269,9 @@ class MainWindow(component.Component):
     def on_vpaned_position_event(self, obj, param):
         self.config['window_pane_position'] = self.vpaned.get_position()
 
+    def on_hpaned_position_event(self, obj, param):
+        self.config['sidebar_position'] = self.hpaned.get_position()
+
     def on_drag_data_received_event(self, widget, drag_context, x, y, selection_data, info, timestamp):
         log.debug('Selection(s) dropped on main window %s', selection_data.get_text())
         if selection_data.get_uris():
@@ -281,8 +289,8 @@ class MainWindow(component.Component):
     def update(self):
         # Update the window title
         def _on_get_session_status(status):
-            download_rate = fspeed(status['payload_download_rate'], precision=0, shortform=True)
-            upload_rate = fspeed(status['payload_upload_rate'], precision=0, shortform=True)
+            download_rate = fspeed(status['payload_download_rate'], precision=0, shortform=False)
+            upload_rate = fspeed(status['payload_upload_rate'], precision=0, shortform=False)
             self.window.set_title(_('D: %s U: %s - Deluge' % (download_rate, upload_rate)))
         if self.config['show_rate_in_title']:
             client.core.get_session_status(

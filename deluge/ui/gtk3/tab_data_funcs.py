@@ -14,7 +14,7 @@ from deluge.ui.common import TRACKER_STATUS_TRANSLATION
 
 
 def ftotal_sized(first, second):
-    return '%s (%s)' % (fsize(first, shortform=True), fsize(second, shortform=True))
+    return '%s (%s)' % (fsize(first, shortform=False), fsize(second, shortform=False))
 
 
 def fratio(value):
@@ -31,8 +31,8 @@ def fpcnt(value, state, message):
 
 
 def fspeed_max(value, max_value=-1):
-    value = fspeed(value, shortform=True)
-    return '%s (%s %s)' % (value, max_value, _('K/s')) if max_value > -1 else value
+    value = fspeed(value, shortform=False)
+    return '%s (%s %s)' % (value, max_value, _('KiB/s')) if max_value > -1 else value
 
 
 def fdate_or_never(value):

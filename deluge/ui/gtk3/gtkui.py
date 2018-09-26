@@ -23,7 +23,7 @@ gi.require_version('Gdk', '3.0')  # NOQA: E402
 # isort:imports-thirdparty
 from gi.repository.Gdk import Display, threads_enter, threads_init, threads_leave
 from gi.repository.GLib import set_prgname
-from gi.repository.Gtk import Builder, ResponseType
+from gi.repository.Gtk import Builder, ResponseType, IconTheme
 from twisted.internet import defer, gtk3reactor
 from twisted.internet.error import ReactorAlreadyInstalledError
 from twisted.internet.task import LoopingCall
@@ -37,7 +37,7 @@ except ReactorAlreadyInstalledError as ex:
 
 # isort:imports-firstparty
 import deluge.component as component
-from deluge.common import fsize, fspeed, get_default_download_dir, osx_check, windows_check
+from deluge.common import fsize, fspeed, get_default_download_dir, osx_check, windows_check, get_pixmap
 from deluge.configmanager import ConfigManager, get_config_dir
 from deluge.error import DaemonRunningError
 from deluge.ui.client import client
@@ -85,7 +85,6 @@ DEFAULT_PREFS = {
     'enable_system_tray': True,
     'close_to_tray': False,
     'start_in_tray': False,
-    'enable_appindicator': False,
     'lock_tray': False,
     'tray_password': '',
     'check_new_releases': True,
@@ -131,9 +130,9 @@ DEFAULT_PREFS = {
     'show_rate_in_title': False,
     'createtorrent.trackers': [],
     'show_piecesbar': False,
-    'pieces_color_missing': [65535, 0, 0],
-    'pieces_color_waiting': [4874, 56494, 0],
-    'pieces_color_downloading': [65535, 55255, 0],
+    'pieces_color_missing': [28835, 7497, 7497],
+    'pieces_color_waiting': [11565, 12335, 15163],
+    'pieces_color_downloading': [4874, 56494, 0],
     'pieces_color_completed': [4883, 26985, 56540],
     'focus_main_window_on_add': True,
     'language': None,
@@ -194,6 +193,9 @@ class GtkUI(object):
 
         # We make sure that the UI components start once we get a core URI
         client.set_disconnect_callback(self.__on_disconnect)
+
+        # Append deluge/ui/data/pixmaps folder to the icon search path
+        IconTheme.get_default().append_search_path(get_pixmap(''))
 
         self.trackericons = TrackerIcons()
         self.sessionproxy = SessionProxy()

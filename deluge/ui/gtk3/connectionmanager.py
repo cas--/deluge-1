@@ -61,13 +61,21 @@ def cell_render_host(column, cell, model, row, data):
     cell.set_property('text', text)
 
 
+def cell_render_status_icon(column, cell, model, row, data):
+    status = model[row][data]
+    status = status if status else 'Offline'
+    icon_name = None
+    if status in HOSTLIST_STATUS:
+        icon_name = HOSTLIST_PIXBUFS[HOSTLIST_STATUS.index(status)]
+    cell.set_property('icon-name', icon_name)
+
+
 def cell_render_status(column, cell, model, row, data):
     status = model[row][data]
     status = status if status else 'Offline'
-    pixbuf = None
-    if status in HOSTLIST_STATUS:
-        pixbuf = HOSTLIST_PIXBUFS[HOSTLIST_STATUS.index(status)]
-    cell.set_property('pixbuf', pixbuf)
+    if status not in HOSTLIST_STATUS:
+        status = None
+    cell.set_property('text', status)
 
 
 class ConnectionManager(component.Component):
@@ -75,43 +83,32 @@ class ConnectionManager(component.Component):
         component.Component.__init__(self, 'ConnectionManager')
         self.gtkui_config = ConfigManager('gtk3.conf')
         self.hostlist = HostList()
-        self.running = False
 
-    # Component overrides
-    def start(self):
-        pass
-
-    def stop(self):
-        # Close this dialog when we are shutting down
-        if self.running:
-            self.connection_manager.response(Gtk.ResponseType.CLOSE)
-
-    def shutdown(self):
-        pass
-
-    # Public methods
-    def show(self):
-        """Show the ConnectionManager dialog."""
         self.builder = Gtk.Builder()
         self.builder.add_from_file(resource_filename(
             __package__, os.path.join('glade', 'connection_manager.ui'),
         ))
         self.connection_manager = self.builder.get_object('connection_manager')
         self.connection_manager.set_transient_for(component.get('MainWindow').window)
+        self.connection_manager.connect('delete-event', self._on_delete_event)
 
         # Create status pixbufs
         if not HOSTLIST_PIXBUFS:
-            for stock_id in (Gtk.STOCK_NO, Gtk.STOCK_YES, Gtk.STOCK_CONNECT):
+            for icon_name in ('deluge-offline', 'deluge-disconnected', 'deluge-connected'):
                 HOSTLIST_PIXBUFS.append(
-                    self.connection_manager.render_icon(stock_id, Gtk.IconSize.MENU),
+                    icon_name
                 )
 
         # Setup the hostlist liststore and treeview
         self.treeview = self.builder.get_object('treeview_hostlist')
         self.liststore = self.builder.get_object('liststore_hostlist')
 
+        column = Gtk.TreeViewColumn(_('Status'))
         render = Gtk.CellRendererPixbuf()
-        column = Gtk.TreeViewColumn(_('Status'), render)
+        column.pack_start(render, False)
+        column.set_cell_data_func(render, cell_render_status_icon, HOSTLIST_COL_STATUS)
+        render = Gtk.CellRendererText()
+        column.pack_start(render, False)
         column.set_cell_data_func(render, cell_render_status, HOSTLIST_COL_STATUS)
         self.treeview.append_column(column)
 
@@ -136,29 +133,39 @@ class ConnectionManager(component.Component):
         self.builder.connect_signals(self)
         self.treeview.get_selection().connect('changed', self.on_hostlist_selection_changed)
 
-        # Set running True before update status call.
-        self.running = True
-
         if windows_check():
             # Call to simulate() required to workaround showing daemon status (see #2813)
             reactor.simulate()
         self._update_host_status()
 
-        # Trigger the on_selection_changed code and select the first host if possible
+        # Trigger the on_hostlist_selection_changed code and select the first host if possible
         self.treeview.get_selection().unselect_all()
         if len(self.liststore):
             self.treeview.get_selection().select_path(0)
 
-        # Run the dialog
-        self.connection_manager.run()
+    # Component overrides
+    def start(self):
+        self._update_host_status()
+        pass
 
-        # Dialog closed so cleanup.
-        self.running = False
-        self.connection_manager.destroy()
-        del self.builder
-        del self.connection_manager
-        del self.liststore
-        del self.treeview
+    def stop(self):
+        pass
+
+    def shutdown(self):
+        pass
+
+    # Public methods
+    def show(self):
+        """Show the ConnectionManager dialog."""
+
+        self._update_host_status()
+
+        # Run the dialog
+        self.connection_manager.present()
+
+    def _on_delete_event(self, widget, event):
+        self.connection_manager.hide()
+        return True
 
     def _load_liststore(self):
         """Load saved host entries"""
@@ -174,18 +181,14 @@ class ConnectionManager(component.Component):
         self.builder.get_object('chk_autostart').set_active(
             self.gtkui_config['autostart_localhost'],
         )
-        self.builder.get_object('chk_donotshow').set_active(
-            not self.gtkui_config['show_connection_manager_on_start'],
+        self.builder.get_object('chk_doshow').set_active(
+            self.gtkui_config['show_connection_manager_on_start'],
         )
 
     def _update_host_status(self):
         """Updates the host status"""
-        if not self.running:
-            # Callback likely fired after the window closed.
-            return
-
         def on_host_status(status_info, row):
-            if self.running and row:
+            if row:
                 row[HOSTLIST_COL_STATUS] = status_info[1]
                 row[HOSTLIST_COL_VERSION] = status_info[2]
                 self._update_widget_buttons()
@@ -211,8 +214,8 @@ class ConnectionManager(component.Component):
         self.builder.get_object('button_edithost').set_sensitive(False)
         self.builder.get_object('button_removehost').set_sensitive(False)
         self.builder.get_object('button_startdaemon').set_sensitive(False)
-        self.builder.get_object('image_startdaemon').set_from_stock(
-            Gtk.STOCK_EXECUTE, Gtk.IconSize.MENU,
+        self.builder.get_object('image_startdaemon').set_from_icon_name(
+            'media-playback-start-symbolic', Gtk.IconSize.MENU,
         )
         self.builder.get_object('label_startdaemon').set_text_with_mnemonic('_Start Daemon')
 
@@ -237,8 +240,8 @@ class ConnectionManager(component.Component):
         # Check to see if the host is online
         if status == 'Connected' or status == 'Online':
             self.builder.get_object('button_connect').set_sensitive(True)
-            self.builder.get_object('image_startdaemon').set_from_stock(
-                Gtk.STOCK_STOP, Gtk.IconSize.MENU,
+            self.builder.get_object('image_startdaemon').set_from_icon_name(
+                'media-playback-stop-symbolic', Gtk.IconSize.MENU,
             )
             self.builder.get_object('label_startdaemon').set_text_with_mnemonic(_('_Stop Daemon'))
             self.builder.get_object('button_startdaemon').set_sensitive(False)
@@ -299,12 +302,8 @@ class ConnectionManager(component.Component):
         log.debug('Connected to daemon: %s', host_id)
         if self.gtkui_config['autoconnect']:
             self.gtkui_config['autoconnect_host_id'] = host_id
-        if self.running:
-            # When connected to a client, and then trying to connect to another,
-            # this component will be stopped(while the connect deferred is
-            # running), so, self.connection_manager will be deleted.
-            # If that's not the case, close the dialog.
-            self.connection_manager.response(Gtk.ResponseType.OK)
+            if not self.gtkui_config['show_connection_manager_on_start']:
+                self.connection_manager.hide()
         component.start()
 
     def _on_connect_fail(self, reason, host_id, try_counter):
@@ -360,7 +359,7 @@ class ConnectionManager(component.Component):
         self._connect(host_id, try_counter=try_counter)
 
     def on_button_close_clicked(self, widget):
-        self.connection_manager.response(Gtk.ResponseType.CLOSE)
+        self.connection_manager.hide()
 
     def _run_addhost_dialog(self, edit_host_info=None):
         """Create and runs the add host dialog.
@@ -392,15 +391,17 @@ class ConnectionManager(component.Component):
             password_entry.set_text(edit_host_info[3])
 
         response = dialog.run()
-        new_host_info = []
-        if response:
-            new_host_info.append(hostname_entry.get_text())
-            new_host_info.append(port_spinbutton.get_value_as_int())
-            new_host_info.append(username_entry.get_text())
-            new_host_info.append(password_entry.get_text())
-
+        new_host_info = list()
+        new_host_info.append(hostname_entry.get_text())
+        new_host_info.append(port_spinbutton.get_value_as_int())
+        new_host_info.append(username_entry.get_text())
+        new_host_info.append(password_entry.get_text())
         dialog.destroy()
-        return new_host_info
+
+        if response == Gtk.ResponseType.OK:
+            return new_host_info
+        else:
+            return None
 
     def on_button_addhost_clicked(self, widget):
         log.debug('on_button_addhost_clicked')
@@ -421,21 +422,15 @@ class ConnectionManager(component.Component):
         status = model[row][HOSTLIST_COL_STATUS]
         host_id = model[row][HOSTLIST_COL_ID]
 
-        if status == 'Connected':
-            def on_disconnect(reason):
-                self._update_host_status()
-            client.disconnect().addCallback(on_disconnect)
-            return
-
         host_info = [
             self.liststore[row][HOSTLIST_COL_HOST],
             self.liststore[row][HOSTLIST_COL_PORT],
             self.liststore[row][HOSTLIST_COL_USER],
             self.liststore[row][HOSTLIST_COL_PASS],
         ]
-        new_host_info = self._run_addhost_dialog(edit_host_info=host_info)
-        if new_host_info:
-            hostname, port, username, password = new_host_info
+        host_info = self._run_addhost_dialog(edit_host_info=host_info)
+        if host_info:
+            hostname, port, username, password = host_info
             try:
                 self.hostlist.update_host(host_id, hostname, port, username, password)
             except ValueError as ex:
@@ -443,6 +438,11 @@ class ConnectionManager(component.Component):
             else:
                 self.liststore[row] = host_id, hostname, port, username, password, '', ''
                 self._update_host_status()
+            if status == 'Connected':
+                def on_disconnect(reason):
+                    self._update_host_status()
+                client.disconnect().addCallback(on_disconnect)
+                self.on_button_connect_clicked()
 
     def on_button_removehost_clicked(self, widget):
         log.debug('on_button_removehost_clicked')
@@ -506,8 +506,8 @@ class ConnectionManager(component.Component):
     def on_chk_toggled(self, widget):
         self.gtkui_config['autoconnect'] = self.builder.get_object('chk_autoconnect').get_active()
         self.gtkui_config['autostart_localhost'] = self.builder.get_object('chk_autostart').get_active()
-        self.gtkui_config['show_connection_manager_on_start'] = not self.builder.get_object(
-            'chk_donotshow',
+        self.gtkui_config['show_connection_manager_on_start'] = self.builder.get_object(
+            'chk_doshow',
         ).get_active()
 
     def on_entry_host_paste_clipboard(self, widget):

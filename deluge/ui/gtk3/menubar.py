@@ -57,8 +57,8 @@ class MenuBar(component.Component):
         torrent_options_menu = self.builder.get_object('options_torrent_menu')
         self.builder.get_object('menuitem_options').set_submenu(torrent_options_menu)
 
-        self.builder.get_object('download-limit-image').set_from_file(deluge.common.get_pixmap('downloading16.png'))
-        self.builder.get_object('upload-limit-image').set_from_file(deluge.common.get_pixmap('seeding16.png'))
+        self.builder.get_object('download-limit-image').set_from_file(deluge.common.get_pixmap('deluge-downloading.svg'))
+        self.builder.get_object('upload-limit-image').set_from_file(deluge.common.get_pixmap('deluge-seeding.svg'))
 
         for menuitem in (
             'menuitem_down_speed', 'menuitem_up_speed',
@@ -157,6 +157,8 @@ class MenuBar(component.Component):
         client.register_event_handler('SessionPausedEvent', self.on_sessionpaused_event)
         client.register_event_handler('SessionResumedEvent', self.on_sessionresumed_event)
 
+        client.core.is_session_paused().addCallback(self.on_is_session_paused)
+        
     def stop(self):
         log.debug('MenuBar stopping')
 
@@ -200,10 +202,22 @@ class MenuBar(component.Component):
         self.update_menu()
 
     def on_sessionpaused_event(self):
+        self.on_is_session_paused(True)
         self.update_menu()
 
     def on_sessionresumed_event(self):
+        self.on_is_session_paused(False)
         self.update_menu()
+
+    def on_is_session_paused(self, state):
+        self.main_builder.get_object('toolbutton_pause_session').set_sensitive(not state)
+        self.builder.get_object('menuitem_pause_session').set_sensitive(not state)
+        self.main_builder.get_object('toolbutton_resume_session').set_sensitive(state)
+        self.builder.get_object('menuitem_resume_session').set_sensitive(state)
+        self.main_builder.get_object('toolbutton_pause').set_sensitive(not state)
+        self.main_builder.get_object('toolbutton_resume').set_sensitive(not state)
+        self.builder.get_object('menuitem_pause').set_sensitive(not state)
+        self.builder.get_object('menuitem_resume').set_sensitive(not state)
 
     # File Menu #
     def on_menuitem_addtorrent_activate(self, data=None):
@@ -233,6 +247,14 @@ class MenuBar(component.Component):
         component.get('ConnectionManager').show()
 
     # Torrent Menu #
+    def on_menuitem_pause_session_activate(self, data=None):
+        log.debug('on_menuitem_pause_session_activate')
+        client.core.pause_session()
+
+    def on_menuitem_resume_session_activate(self, data=None):
+        log.debug('on_menuitem_resume_session_activate')
+        client.core.resume_session()
+
     def on_menuitem_pause_activate(self, data=None):
         log.debug('on_menuitem_pause_activate')
         client.core.pause_torrents(
@@ -404,19 +426,19 @@ class MenuBar(component.Component):
         other_dialog_info = {
             'menuitem_down_speed': [
                 _('Download Speed Limit'), _('Set the maximum download speed'),
-                _('KiB/s'), 'downloading.svg',
+                _('KiB/s'), 'deluge-downloading',
             ],
             'menuitem_up_speed': [
                 _('Upload Speed Limit'), _('Set the maximum upload speed'),
-                _('KiB/s'), 'seeding.svg',
+                _('KiB/s'), 'deluge-seeding',
             ],
             'menuitem_max_connections': [
                 _('Incoming Connections'), _('Set the maximum incoming connections'),
-                '', Gtk.STOCK_NETWORK,
+                '', 'network-transmit-receive-symbolic',
             ],
             'menuitem_upload_slots': [
                 _('Peer Upload Slots'), _('Set the maximum upload slots'),
-                '', Gtk.STOCK_SORT_ASCENDING,
+                '', 'view-sort-descending-symbolic',
             ],
             'menuitem_stop_seed_at_ratio': [_('Stop Seed At Ratio'), 'Stop torrent seeding at ratio', '', None],
         }
@@ -551,3 +573,4 @@ class MenuBar(component.Component):
             client.core.set_torrent_options(
                 update_torrents, {'owner': username},
             ).addErrback(failed_change_owner)
+

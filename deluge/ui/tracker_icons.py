@@ -451,7 +451,7 @@ class TrackerIcons(Component):
     @proxy(threads.deferToThread)
     def resize_icon(self, icon):
         """
-        Resizes the given icon to be 16x16 pixels
+        Resizes the given icon to be 32x32 pixels
 
         :param icon: the icon to resize
         :type icon: TrackerIcon
@@ -461,9 +461,9 @@ class TrackerIcons(Component):
         if icon:
             filename = icon.get_filename()
             img = Image.open(filename)
-            if img.size > (16, 16):
+            if img.size > (32, 32):
                 new_filename = filename.rpartition('.')[0] + '.png'
-                img = img.resize((16, 16), Image.ANTIALIAS)
+                img = img.resize((32, 32), Image.ANTIALIAS)
                 img.save(new_filename)
                 if new_filename != filename:
                     os.remove(filename)

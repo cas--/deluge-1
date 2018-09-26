@@ -12,9 +12,11 @@ from __future__ import unicode_literals
 import logging
 import os.path
 
+from gi.repository import Gtk, Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository.Gtk import (Builder, CellRendererPixbuf, CellRendererProgress, CellRendererText, ListStore,
                                TreeViewColumn, TreeViewColumnSizing)
+import cairo
 
 import deluge.common
 import deluge.component as component
@@ -33,6 +35,8 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
+scale = component.get('MainWindow').window.get_scale_factor()
+
 
 class PeersTab(Tab):
     def __init__(self):
@@ -47,7 +51,7 @@ class PeersTab(Tab):
         self.listview.connect('query-tooltip', self._on_query_tooltip)
 
         # flag, ip, client, downspd, upspd, country code, int_ip, seed/peer icon, progress
-        self.liststore = ListStore(Pixbuf, str, str, int, int, str, float, Pixbuf, float)
+        self.liststore = ListStore(Pixbuf, str, str, int, int, str, float, str, float)
         self.cached_flag_pixbufs = {}
 
         self.seed_pixbuf = icon_seeding
@@ -60,12 +64,12 @@ class PeersTab(Tab):
         column = TreeViewColumn()
         render = CellRendererPixbuf()
         column.pack_start(render, False)
-        column.add_attribute(render, 'pixbuf', 0)
+        column.set_cell_data_func(render, self.cell_flag_icon, 5)
         column.set_sort_column_id(5)
         column.set_clickable(True)
         column.set_resizable(True)
         column.set_expand(False)
-        column.set_min_width(20)
+        column.set_min_width(40)
         column.set_reorderable(True)
         self.listview.append_column(column)
 
@@ -73,7 +77,7 @@ class PeersTab(Tab):
         column = TreeViewColumn(_('Address'))
         render = CellRendererPixbuf()
         column.pack_start(render, False)
-        column.add_attribute(render, 'pixbuf', 7)
+        column.add_attribute(render, 'icon-name', 7)
         render = CellRendererText()
         column.pack_start(render, False)
         column.add_attribute(render, 'text', 1)
@@ -101,6 +105,7 @@ class PeersTab(Tab):
         # Progress column
         column = TreeViewColumn(_('Progress'))
         render = CellRendererProgress()
+        render.set_padding(0, 1)
         column.pack_start(render, True)
         column.set_cell_data_func(render, cell_data_peer_progress, 8)
         column.set_sort_column_id(8)
@@ -219,11 +224,11 @@ class PeersTab(Tab):
         if country not in self.cached_flag_pixbufs:
             # We haven't created a pixbuf for this country yet
             try:
-                self.cached_flag_pixbufs[country] = Pixbuf.new_from_file(
+                self.cached_flag_pixbufs[country] = Pixbuf.new_from_file_at_scale(
                     deluge.common.resource_filename(
                         'deluge',
-                        os.path.join('ui', 'data', 'pixmaps', 'flags', country.lower() + '.png'),
-                    ),
+                        os.path.join('ui', 'data', 'pixmaps', 'flags', country.lower() + '.svgz'),
+                    ), -1, 16 * scale, True
                 )
             except Exception as ex:
                 log.debug('Unable to load flag: %s', ex)
@@ -249,7 +254,6 @@ class PeersTab(Tab):
                     self.liststore.set_value(row, 4, peer['up_speed'])
                 if peer['country'] != values[2]:
                     self.liststore.set_value(row, 5, peer['country'])
-                    self.liststore.set_value(row, 0, self.get_flag_pixbuf(peer['country']))
                 if peer['seed']:
                     icon = self.seed_pixbuf
                 else:
@@ -312,22 +316,46 @@ class PeersTab(Tab):
         log.debug('on_button_press_event')
         # We only care about right-clicks
         if self.torrent_id and event.button == 3:
-            self.peer_menu.popup(None, None, None, event.button, event.time)
+            self.peer_menu.popup(None, None, None, None, event.button, event.time)
             return True
 
     def _on_query_tooltip(self, widget, x, y, keyboard_tip, tooltip):
-        tooltip, x, y, model, path, _iter = widget.get_tooltip_context(
+
+        def on_draw(wid, cr):
+            cr.scale(float(wid.get_allocated_width()) / float(pix.get_width()),
+                     float(wid.get_allocated_height()) / float(pix.get_height()))
+            Gdk.cairo_set_source_pixbuf(cr, pix, 0, 0)
+            cr.paint_with_alpha(0.8)
+
+        tooltip_row, x, y, model, path, _iter = widget.get_tooltip_context(
             x, y, keyboard_tip)
-        if tooltip:
-            country_code = model.get(_iter, 5)[0]
-            if country_code != '  ' and country_code in COUNTRIES:
-                tooltip.set_text(COUNTRIES[country_code])
-                # widget here is self.listview
-                widget.set_tooltip_cell(
-                    tooltip, path, widget.get_column(0),
-                    None,
-                )
-                return True
+        if tooltip_row:
+            column = widget.get_path_at_pos(x, y)[1]
+            if column.get_title() == '':
+                country_code = model.get_value(_iter, 5)
+                if country_code != '  ' and country_code in COUNTRIES:
+                    box = Gtk.Box(Gtk.Orientation.HORIZONTAL, 4)
+                    draw_area = Gtk.DrawingArea()
+                    draw_area.connect("draw", on_draw)
+                    pix = Pixbuf.new_from_file(
+                        deluge.common.resource_filename(
+                            'deluge',
+                            os.path.join('ui', 'data', 'pixmaps', 'flags', country_code.lower() + '.svgz'),
+                        ))
+                    req_icon_height = 64
+                    draw_area.set_size_request(req_icon_height * pix.get_width() / pix.get_height(), req_icon_height)
+                    text = Gtk.Label()
+                    text.set_markup('<b>%s</b>' % COUNTRIES[country_code])
+                    box.add(draw_area)
+                    box.add(text)
+                    box.show_all()
+                    tooltip.set_custom(box)
+                    # widget here is self.listview
+                    widget.set_tooltip_cell(
+                        tooltip, path, column,
+                        None,
+                    )
+                    return True
         return False
 
     def on_menuitem_add_peer_activate(self, menuitem):
@@ -356,3 +384,25 @@ class PeersTab(Tab):
                     client.core.connect_peer(self.torrent_id, ip, port)
         peer_dialog.destroy()
         return True
+
+    def cell_flag_icon(self, column, cell, model, row, data):
+        country = self.liststore.get_value(row, 5)
+        pix = self.get_flag_pixbuf(country)
+        if not pix:
+            return
+
+        w = pix.get_width()
+        h = pix.get_height()
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+        surface.set_device_scale(scale, scale)
+        cr = cairo.Context(surface)
+        cr.scale(1.0 / scale, 1.0 / scale)
+        Gdk.cairo_set_source_pixbuf(cr, pix, 0, 0)
+        cr.paint_with_alpha(0.8)
+        cr.rectangle(0, 0, w, h)
+        cr.set_source_rgba(0.3, 0.3, 0.3, 1)
+        cr.set_line_width(scale)
+        cr.stroke()
+
+        cell.set_property("surface", surface)
+

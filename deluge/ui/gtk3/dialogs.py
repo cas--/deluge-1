@@ -54,9 +54,11 @@ class BaseDialog(Gtk.Dialog):
             # Hack for Windows since it doesn't support svg
             if icon.endswith('.svg') and windows_check():
                 icon = icon.rpartition('.svg')[0] + '16.png'
-            image.set_from_pixbuf(get_pixbuf_at_size(icon, 32))
-        else:
+            image.set_from_pixbuf(get_pixbuf_at_size(icon, Gtk.IconSize.DIALOG))
+        elif Gtk.stock_lookup(icon):
             image.set_from_stock(icon, Gtk.IconSize.DIALOG)
+        else:
+            image.set_from_icon_name(icon, Gtk.IconSize.DIALOG)
         image.set_alignment(0.5, 0.0)
         hbox.pack_start(image, False, False, 0)
         vbox = Gtk.VBox(spacing=5)

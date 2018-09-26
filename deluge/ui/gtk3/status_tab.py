@@ -34,7 +34,7 @@ class StatusTab(Tab):
         self.add_tab_widget('summary_availability', fratio, ('distributed_copies',))
         self.add_tab_widget(
             'summary_total_downloaded', ftotal_sized,
-            ('all_time_download', 'total_payload_download'),
+            ('total_done', 'total_payload_download'),
         )
         self.add_tab_widget(
             'summary_total_uploaded', ftotal_sized,
@@ -96,13 +96,15 @@ class StatusTab(Tab):
         if self.config['show_piecesbar']:
             if self.piecesbar.get_fraction() != fraction:
                 self.piecesbar.set_fraction(fraction)
-            if status['state'] != 'Checking' and self.piecesbar.get_pieces() != status['pieces']:
+            if status['state'] == 'Checking':
+                self.piecesbar.set_pieces([], 0)
+            elif self.piecesbar.get_pieces() != status['pieces']:
                 # Skip pieces assignment if checking torrent.
                 self.piecesbar.set_pieces(status['pieces'], status['num_pieces'])
+
             self.piecesbar.update()
-        else:
-            if self.progressbar.get_fraction() != fraction:
-                self.progressbar.set_fraction(fraction)
+        if self.progressbar.get_fraction() != fraction:
+            self.progressbar.set_fraction(fraction)
 
     def on_show_piecesbar_config_changed(self, key, show):
         if show:
@@ -118,7 +120,7 @@ class StatusTab(Tab):
             ).pack_start(self.piecesbar, False, False, 0)
         self.tab_widgets['piecesbar'] = TabWidget(self.piecesbar, fpcnt, ('progress', 'state', 'message'))
         self.piecesbar.show()
-        self.progressbar.hide()
+#        self.progressbar.hide()
 
     def hide_piecesbar(self):
         self.progressbar.show()

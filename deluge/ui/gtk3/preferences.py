@@ -35,11 +35,6 @@ except ImportError:
     # PY2 fallback
     from urlparse import urlparse  # pylint: disable=ungrouped-imports
 
-try:
-    import appindicator
-except ImportError:
-    appindicator = False
-
 log = logging.getLogger(__name__)
 
 ACCOUNTS_USERNAME, ACCOUNTS_LEVEL, ACCOUNTS_PASSWORD = list(range(3))
@@ -143,9 +138,6 @@ class Preferences(component.Component):
         self.plugin_listview.get_selection().connect('changed', self.on_plugin_selection_changed)
 
         self.builder.connect_signals(self)
-
-        # Radio buttons to choose between systray and appindicator
-        self.builder.get_object('alignment_tray_type').set_visible(bool(appindicator))
 
         from .gtkui import DEFAULT_PREFS
         self.COLOR_DEFAULTS = {}
@@ -448,7 +440,6 @@ class Preferences(component.Component):
         self.builder.get_object('chk_use_tray').set_active(self.gtkui_config['enable_system_tray'])
         self.builder.get_object('chk_min_on_close').set_active(self.gtkui_config['close_to_tray'])
         self.builder.get_object('chk_start_in_tray').set_active(self.gtkui_config['start_in_tray'])
-        self.builder.get_object('radio_appind').set_active(self.gtkui_config['enable_appindicator'])
         self.builder.get_object('chk_lock_tray').set_active(self.gtkui_config['lock_tray'])
         self.builder.get_object('radio_standalone').set_active(self.gtkui_config['standalone'])
         self.builder.get_object('radio_thinclient').set_active(not self.gtkui_config['standalone'])
@@ -595,7 +586,6 @@ class Preferences(component.Component):
         new_gtkui_config['enable_system_tray'] = self.builder.get_object('chk_use_tray').get_active()
         new_gtkui_config['close_to_tray'] = self.builder.get_object('chk_min_on_close').get_active()
         new_gtkui_config['start_in_tray'] = self.builder.get_object('chk_start_in_tray').get_active()
-        new_gtkui_config['enable_appindicator'] = self.builder.get_object('radio_appind').get_active()
         new_gtkui_config['lock_tray'] = self.builder.get_object('chk_lock_tray').get_active()
         passhex = sha(self.builder.get_object('txt_tray_password').get_text()).hexdigest()
         if passhex != 'c07eb5a8c0dc7bb81c217b67f11c3b7a5e95ffd7':
@@ -818,11 +808,8 @@ class Preferences(component.Component):
                 'spin_outgoing_port_max': False,
             },
             'chk_use_tray': {
-                'radio_appind': True,
-                'radio_systray': True,
                 'chk_min_on_close': True,
                 'chk_start_in_tray': True,
-                'alignment_tray_type': True,
                 'chk_lock_tray': True,
             },
             'chk_lock_tray': {

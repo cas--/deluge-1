@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 
 class StatusBarItem(object):
-    def __init__(self, image=None, stock=None, text=None, markup=False, callback=None, tooltip=None):
+    def __init__(self, image=None, stock=None, icon=None, text=None, markup=False, callback=None, tooltip=None):
         self._widgets = []
         self._ebox = Gtk.EventBox()
         self._hbox = Gtk.HBox()
@@ -38,11 +38,13 @@ class StatusBarItem(object):
         self._ebox.add(self._hbox)
 
         # Add image from file or stock
-        if image is not None or stock is not None:
+        if image is not None or stock is not None or icon is not None:
             if image is not None:
                 self.set_image_from_file(image)
             if stock is not None:
                 self.set_image_from_stock(stock)
+            if icon is not None:
+                self.set_image_from_icon(icon)
 
         # Add text
         if markup:
@@ -71,6 +73,9 @@ class StatusBarItem(object):
 
     def set_image_from_stock(self, stock):
         self._image.set_from_stock(stock, Gtk.IconSize.MENU)
+
+    def set_image_from_icon(self, icon):
+        self._image.set_from_icon_name(icon, Gtk.IconSize.MENU)
 
     def set_text(self, text):
         if not text:
@@ -139,7 +144,7 @@ class StatusBar(component.Component):
         self.statusbar.show_all()
         # Create the not connected item
         self.not_connected_item = StatusBarItem(
-            stock=Gtk.STOCK_STOP, text=_('Not Connected'),
+            icon='network-offline-symbolic', text=_('Not Connected'),
             callback=self._on_notconnected_item_clicked,
         )
         # Show the not connected status bar
@@ -155,41 +160,41 @@ class StatusBar(component.Component):
         self.remove_item(self.not_connected_item)
 
         self.connections_item = self.add_item(
-            stock=Gtk.STOCK_NETWORK,
+            icon='network-transmit-receive-symbolic',
             callback=self._on_connection_item_clicked,
             tooltip=_('Connections (Limit)'), pack_start=True,
         )
 
         self.download_item = self.add_item(
-            image=get_pixmap('downloading16.png'),
+            icon='deluge-downloading',
             callback=self._on_download_item_clicked,
             tooltip=_('Download Speed (Limit)'), pack_start=True,
         )
 
         self.upload_item = self.add_item(
-            image=get_pixmap('seeding16.png'),
+            icon='deluge-seeding',
             callback=self._on_upload_item_clicked,
             tooltip=_('Upload Speed (Limit)'), pack_start=True,
         )
 
         self.traffic_item = self.add_item(
-            image=get_pixmap('traffic16.png'),
+            icon='deluge-traffic',
             callback=self._on_traffic_item_clicked,
             tooltip=_('Protocol Traffic (Down:Up)'), pack_start=True,
         )
 
         self.dht_item = StatusBarItem(
-            image=get_pixmap('dht16.png'), tooltip=_('DHT Nodes'),
+            icon='deluge-dht', tooltip=_('DHT Nodes'),
         )
 
         self.diskspace_item = self.add_item(
-            stock=Gtk.STOCK_HARDDISK,
+            icon='drive-harddisk-symbolic',
             callback=self._on_diskspace_item_clicked,
             tooltip=_('Free Disk Space'), pack_start=True,
         )
 
         self.health_item = self.add_item(
-            stock=Gtk.STOCK_DIALOG_ERROR,
+            icon='network-error-symbolic',
             text=_('<b><small>Port Issue</small></b>'),
             markup=True,
             tooltip=_('No incoming connections, check port forwarding'),
@@ -240,10 +245,10 @@ class StatusBar(component.Component):
     def show_not_connected(self):
         self.hbox.pack_start(self.not_connected_item.get_eventbox(), False, False, 0)
 
-    def add_item(self, image=None, stock=None, text=None, markup=False, callback=None, tooltip=None, pack_start=False):
+    def add_item(self, image=None, stock=None, icon=None, text=None, markup=False, callback=None, tooltip=None, pack_start=False):
         """Adds an item to the status bar"""
         # The return tuple.. we return whatever widgets we add
-        item = StatusBarItem(image, stock, text, markup, callback, tooltip)
+        item = StatusBarItem(image, stock, icon, text, markup, callback, tooltip)
         if pack_start:
             self.hbox.pack_start(item.get_eventbox(), False, False, 0)
         else:
@@ -258,9 +263,9 @@ class StatusBar(component.Component):
             except Exception as ex:
                 log.debug('Unable to remove widget: %s', ex)
 
-    def add_timeout_item(self, seconds=3, image=None, stock=None, text=None, callback=None):
+    def add_timeout_item(self, seconds=3, image=None, stock=None, icon=None, text=None, callback=None):
         """Adds an item to the StatusBar for seconds"""
-        item = self.add_item(image, stock, text, callback)
+        item = self.add_item(image, stock, icon, text, callback)
         # Start a timer to remove this item in seconds
         timeout_add(seconds * 1000, self.remove_item, item)
 
@@ -268,7 +273,7 @@ class StatusBar(component.Component):
         """Displays a warning to the user in the status bar"""
         if text not in self.current_warnings:
             item = self.add_item(
-                stock=Gtk.STOCK_DIALOG_WARNING, text=text, callback=callback,
+                icon='dialog-warning-symbolic', text=text, callback=callback,
             )
             self.current_warnings.append(text)
             timeout_add(3000, self.remove_warning, item)
@@ -317,8 +322,8 @@ class StatusBar(component.Component):
             self.remove_item(self.dht_item)
 
     def _on_get_session_status(self, status):
-        self.download_rate = fspeed(status['payload_download_rate'], precision=0, shortform=True)
-        self.upload_rate = fspeed(status['payload_upload_rate'], precision=0, shortform=True)
+        self.download_rate = fspeed(status['payload_download_rate'], precision=1, shortform=False)
+        self.upload_rate = fspeed(status['payload_upload_rate'], precision=1, shortform=False)
         self.download_protocol_rate = (status['download_rate'] - status['payload_download_rate']) // 1024
         self.upload_protocol_rate = (status['upload_rate'] - status['payload_upload_rate']) // 1024
         self.num_connections = status['num_peers']
@@ -338,7 +343,7 @@ class StatusBar(component.Component):
 
     def _on_get_free_space(self, space):
         if space >= 0:
-            self.diskspace_item.set_markup('<small>%s</small>' % fsize(space, shortform=True))
+            self.diskspace_item.set_markup('<small>%s</small>' % fsize(space, shortform=False))
         else:
             self.diskspace_item.set_markup('<span foreground="red">' + _('Error') + '</span>')
 
@@ -360,8 +365,12 @@ class StatusBar(component.Component):
             label_string = '%s' % self.num_connections
         else:
             label_string = '%s <small>(%s)</small>' % (self.num_connections, self.max_connections_global)
-
         self.connections_item.set_markup(label_string)
+
+        if self.num_connections:
+            self.connections_item.set_image_from_icon('network-transmit-receive-symbolic')
+        else:
+            self.connections_item.set_image_from_icon('network-idle-symbolic')
 
     def update_dht_label(self):
         # Set the max connections label
@@ -373,7 +382,7 @@ class StatusBar(component.Component):
             label_string = self.download_rate
         else:
             label_string = '%s <small>(%i %s)</small>' % (
-                self.download_rate, self.max_download_speed, _('K/s'),
+                self.download_rate, self.max_download_speed, _('KiB/s'),
             )
 
         self.download_item.set_markup(label_string)
@@ -384,13 +393,13 @@ class StatusBar(component.Component):
             label_string = self.upload_rate
         else:
             label_string = '%s <small>(%i %s)</small>' % (
-                self.upload_rate, self.max_upload_speed, _('K/s'),
+                self.upload_rate, self.max_upload_speed, _('KiB/s'),
             )
 
         self.upload_item.set_markup(label_string)
 
     def update_traffic_label(self):
-        label_string = '<small>%i:%i %s</small>' % (self.download_protocol_rate, self.upload_protocol_rate, _('K/s'))
+        label_string = '<small>%i:%i %s</small>' % (self.download_protocol_rate, self.upload_protocol_rate, _('KiB/s'))
         self.traffic_item.set_markup(label_string)
 
     def update(self):
@@ -401,15 +410,15 @@ class StatusBar(component.Component):
         other_dialog_info = {
             'max_download_speed': (
                 _('Download Speed Limit'), _('Set the maximum download speed'),
-                _('K/s'), 'downloading.svg', self.max_download_speed,
+                _('KiB/s'), 'deluge-downloading', self.max_download_speed,
             ),
             'max_upload_speed': (
                 _('Upload Speed Limit'), _('Set the maximum upload speed'),
-                _('K/s'), 'seeding.svg', self.max_upload_speed,
+                _('KiB/s'), 'deluge-seeding', self.max_upload_speed,
             ),
             'max_connections_global': (
                 _('Incoming Connections'), _('Set the maximum incoming connections'),
-                '', Gtk.STOCK_NETWORK, self.max_connections_global,
+                '', 'network-transmit-receive-symbolic', self.max_connections_global,
             ),
         }
 
@@ -440,7 +449,7 @@ class StatusBar(component.Component):
             self.config['tray_download_speed_list'],
             self._on_set_download_speed,
             self.max_download_speed,
-            _('K/s'), show_notset=True, show_other=True,
+            _('KiB/s'), show_notset=True, show_other=True,
         )
         menu.show_all()
         menu.popup(None, None, None, None, event.button, event.time)
@@ -454,7 +463,7 @@ class StatusBar(component.Component):
             self.config['tray_upload_speed_list'],
             self._on_set_upload_speed,
             self.max_upload_speed,
-            _('K/s'), show_notset=True, show_other=True,
+            _('KiB/s'), show_notset=True, show_other=True,
         )
         menu.show_all()
         menu.popup(None, None, None, None, event.button, event.time)
@@ -477,13 +486,13 @@ class StatusBar(component.Component):
         self.set_limit_value(widget, 'max_connections_global')
 
     def _on_health_icon_clicked(self, widget, event):
-        component.get('Preferences').show('Network')
+        component.get('Preferences').show('network')
 
     def _on_notconnected_item_clicked(self, widget, event):
         component.get('ConnectionManager').show()
 
     def _on_traffic_item_clicked(self, widget, event):
-        component.get('Preferences').show('Network')
+        component.get('Preferences').show('network')
 
     def _on_diskspace_item_clicked(self, widget, event):
-        component.get('Preferences').show('Downloads')
+        component.get('Preferences').show('downloads')

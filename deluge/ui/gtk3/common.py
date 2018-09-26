@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 
 def create_blank_pixbuf(size=16):
-    pix = Pixbuf.new(Colorspace.RGB, True, 8, size, size)
+    pix = Pixbuf(Colorspace.RGB, True, 8, size, size)
     pix.fill(0x0)
     return pix
 
@@ -41,12 +41,12 @@ def get_pixbuf(filename):
 
 
 # Status icons.. Create them from file only once to avoid constantly re-creating them.
-icon_downloading = get_pixbuf('downloading16.png')
-icon_seeding = get_pixbuf('seeding16.png')
-icon_inactive = get_pixbuf('inactive16.png')
-icon_alert = get_pixbuf('alert16.png')
-icon_queued = get_pixbuf('queued16.png')
-icon_checking = get_pixbuf('checking16.png')
+icon_downloading = 'deluge-downloading'
+icon_seeding = 'deluge-seeding'
+icon_inactive = 'deluge-inactive'
+icon_alert = 'deluge-alert'
+icon_queued = 'deluge-queued'
+icon_checking = 'deluge-checking'
 
 
 def get_pixbuf_at_size(filename, size):
@@ -101,22 +101,27 @@ def build_menu_radio_list(
         value_list.pop()
         value_list.append(pref_value)
 
+    # FIXME: First menu item in group run callback function during menu construction.
+    # FIXME: Temporary solution to add first menu item without callback.
+    menuitem = RadioMenuItem(group=group, label='333')
+    group = menuitem
+
     for value in sorted(value_list):
         item_text = str(value)
         if suffix:
             item_text += ' ' + suffix
-
-        menuitem = RadioMenuItem.new_with_label(group, item_text)
-        group = menuitem.get_group()
-
+        menuitem = RadioMenuItem(group=group, label=item_text)
+        group = menuitem
         if pref_value and value == pref_value:
             menuitem.set_active(True)
+        else:
+            menuitem.set_active(False)
         if callback:
             menuitem.connect('toggled', callback)
         menu.append(menuitem)
 
     if show_notset:
-        menuitem = RadioMenuItem.new_with_label(group, notset_label)
+        menuitem = RadioMenuItem(group=group, label=notset_label)
         menuitem.set_name('unlimited')
         if pref_value and pref_value < notset_lessthan:
             menuitem.set_active(True)
@@ -126,7 +131,7 @@ def build_menu_radio_list(
     if show_other:
         menuitem = SeparatorMenuItem()
         menu.append(menuitem)
-        menuitem = MenuItem.new_with_label(_('Other...'))
+        menuitem = MenuItem(_('Other...'))
         menuitem.set_name('other')
         menuitem.connect('activate', callback)
         menu.append(menuitem)

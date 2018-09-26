@@ -15,7 +15,7 @@ import logging
 import os
 import warnings
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository.Pango import EllipsizeMode
 
@@ -29,21 +29,21 @@ from .common import get_pixbuf, get_pixbuf_at_size
 log = logging.getLogger(__name__)
 
 STATE_PIX = {
-    'All': 'all',
-    'Downloading': 'downloading',
-    'Seeding': 'seeding',
-    'Paused': 'inactive',
-    'Checking': 'checking',
-    'Queued': 'queued',
-    'Error': 'alert',
-    'Active': 'active',
-    'Allocating': 'checking',
-    'Moving': 'checking',
+    'All': 'deluge-all',
+    'Downloading': 'deluge-downloading',
+    'Seeding': 'deluge-seeding',
+    'Paused': 'deluge-inactive',
+    'Checking': 'deluge-checking',
+    'Queued': 'deluge-queued',
+    'Error': 'deluge-alert',
+    'Active': 'deluge-active',
+    'Allocating': 'deluge-checking',
+    'Moving': 'deluge-checking',
 }
 
 TRACKER_PIX = {
-    'All': 'tracker_all',
-    'Error': 'tracker_warning',
+    'All': 'deluge-tracker_all',
+    'Error': 'deluge-tracker_warning',
 }
 
 FILTER_COLUMN = 5
@@ -57,6 +57,9 @@ class FilterTreeView(component.Component):
         self.tracker_icons = component.get('TrackerIcons')
 
         self.sidebar = component.get('SideBar')
+
+        self.icon_size = component.get('MainWindow').window.get_scale_factor() * 16
+
         self.treeview = Gtk.TreeView()
         self.sidebar.add_tab(self.treeview, 'filters', 'Filters')
 
@@ -73,7 +76,7 @@ class FilterTreeView(component.Component):
         # icon cell
         self.cell_pix = Gtk.CellRendererPixbuf()
         column.pack_start(self.cell_pix, expand=False)
-        column.add_attribute(self.cell_pix, 'pixbuf', 4)
+        column.set_cell_data_func(self.cell_pix, self.cell_icon, 4)
         # label cell
         cell_label = Gtk.CellRendererText()
         cell_label.set_property('ellipsize', EllipsizeMode.END)
@@ -114,6 +117,13 @@ class FilterTreeView(component.Component):
         builder.connect_signals(self)
 
         self.default_menu_items = self.menu.get_children()
+
+    def cell_icon(self, column, cell, model, row, data):
+        pixbuf = model.get_value(row, 4)
+        if pixbuf:
+            surface = Gdk.cairo_surface_create_from_pixbuf(
+                pixbuf, self.icon_size / 16, None)
+            cell.set_property("surface", surface)
 
     def start(self):
         # add Cat nodes:
@@ -186,8 +196,9 @@ class FilterTreeView(component.Component):
 
     def update_row(self, cat, value, count, label=None):
         def on_get_icon(icon):
-            if icon:
-                self.set_row_image(cat, value, icon.get_filename())
+            if Pixbuf.get_file_info(icon.get_filename())[0]:
+                icon_pix = Pixbuf.new_from_file_at_size(icon.get_filename(), self.icon_size, self.icon_size)
+                self.treestore.set_value(self.filters[(cat, value)], 4, icon_pix)
 
         if (cat, value) in self.filters:
             row = self.filters[(cat, value)]
@@ -207,6 +218,8 @@ class FilterTreeView(component.Component):
             self.filters[(cat, value)] = row
 
             if cat == 'tracker_host' and value not in ('All', 'Error') and value:
+                pix = Gtk.IconTheme.get_default().load_icon('network-server', self.icon_size, 0)
+                self.treestore.set_value(self.filters[(cat, value)], 4, pix)
                 d = self.tracker_icons.fetch(value)
                 d.addCallback(on_get_icon)
 
@@ -247,13 +260,7 @@ class FilterTreeView(component.Component):
             pix = TRACKER_PIX.get(value, None)
 
         if pix:
-            return get_pixbuf('%s16.png' % pix)
-
-    def set_row_image(self, cat, value, filename):
-        pix = get_pixbuf_at_size(filename, 16)
-        row = self.filters[(cat, value)]
-        self.treestore.set_value(row, 4, pix)
-        return False
+            return get_pixbuf_at_size('%s.svg' % pix, self.icon_size)
 
     def on_selection_changed(self, selection):
         try:

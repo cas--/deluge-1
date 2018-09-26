@@ -68,7 +68,7 @@ def cell_data_statusicon(column, cell, model, row, data):
         original_filters = warnings.filters[:]
         warnings.simplefilter('ignore')
         try:
-            cell.set_property('pixbuf', icon)
+            cell.set_property('icon-name', icon)
         finally:
             warnings.filters = original_filters
 
@@ -162,7 +162,7 @@ def cell_data_speed(cell, model, row, data, cache_key):
     func_last_value[cache_key] = speed
 
     if speed > 0:
-        speed_str = common.fspeed(speed, shortform=True)
+        speed_str = common.fspeed(speed, shortform=False)
         cell.set_property('markup', '{0} <small>{1}</small>'.format(*tuple(speed_str.split())))
     else:
         cell.set_property('text', '')
@@ -187,7 +187,7 @@ def cell_data_speed_limit(cell, model, row, data, cache_key):
     func_last_value[cache_key] = speed
 
     if speed > 0:
-        speed_str = common.fspeed(speed * 1024, shortform=True)
+        speed_str = common.fspeed(speed * 1024, shortform=False)
         cell.set_property('markup', '{0} <small>{1}</small>'.format(*tuple(speed_str.split())))
     else:
         cell.set_property('text', '')
@@ -204,7 +204,7 @@ def cell_data_speed_limit_up(column, cell, model, row, data):
 def cell_data_size(column, cell, model, row, data):
     """Display value in terms of size, eg. 2 MB"""
     size = model.get_value(row, data)
-    cell.set_property('text', common.fsize(size, shortform=True))
+    cell.set_property('text', common.fsize(size, shortform=False))
 
 
 def cell_data_peer(column, cell, model, row, data):
@@ -238,7 +238,7 @@ def cell_data_ratio(cell, model, row, data, cache_key):
     if func_last_value[cache_key] == ratio:
         return
     func_last_value[cache_key] = ratio
-    cell.set_property('text', '∞' if ratio < 0 else ('%.1f' % ratio).rstrip('0').rstrip('.'))
+    cell.set_property('text', '∞' if ratio <= 0 else ('%.3f' % ratio).rstrip('0').rstrip('.'))
 
 
 def cell_data_ratio_seeds_peers(column, cell, model, row, data):

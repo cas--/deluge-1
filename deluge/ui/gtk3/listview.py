@@ -195,8 +195,9 @@ class ListView(object):
         # Using the default sort column
         elif self.default_sort_column_id:
             self.model_filter.set_sort_column_id(self.default_sort_column_id, Gtk.SortType.ASCENDING)
-        self.model_filter.set_default_sort_func(
-            self.generic_sort_func, self.get_column_index(_('Added'))[0])
+        """Lead to triple click sort problem"""
+        # self.model_filter.set_default_sort_func(
+        #     self.generic_sort_func, self.get_column_index('Added')[0])
 
     def get_sort_column_from_state(self):
         """Find the first (should only be one) state with sort enabled"""
@@ -212,8 +213,9 @@ class ListView(object):
             self.last_sort_order = {}
 
             def record_position(model, path, _iter, data):
-                unique_id = model[_iter][self.unique_column_id]
-                self.last_sort_order[unique_id] = int(str(path))
+                # FIXME: TypeError: 'TreePath' object does not support indexing
+                # Verify (old code: ` = path[0]`)
+                self.last_sort_order[model[_iter][self.unique_column_id]] = path[0]
             model.foreach(record_position, None)
 
     def on_model_row_inserted(self, model, path, _iter):
@@ -546,6 +548,7 @@ class ListView(object):
         column.set_min_width(20)
         column.set_reorderable(True)
         column.set_visible(not hidden)
+        # FIXME: Check for errors with button press, related new signal
         column.connect(
             'button-press-event',
             self.on_treeview_header_right_clicked,
@@ -646,6 +649,7 @@ class ListView(object):
         if col_types is None:
             col_types = [float, str]
         render = Gtk.CellRendererProgress()
+        render.set_padding(0, 1)
         self.add_column(
             header, render, col_types, hidden, position,
             status_field, sortid, function=function,

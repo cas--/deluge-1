@@ -123,6 +123,7 @@ class PluginManager(deluge.pluginmanagerbase.PluginManagerBase, component.Compon
         return component.get('MenuBar').torrentmenu.remove(*args)
 
     def add_preferences_page(self, *args):
+        aaa = 1
         return component.get('Preferences').add_page(*args)
 
     def remove_preferences_page(self, *args):

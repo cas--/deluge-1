@@ -455,12 +455,12 @@ _entry_points['deluge.ui'] = [
 ]
 
 
-_package_data['deluge.ui'] = [
+_package_data['deluge'] = [
     'ui/data/pixmaps/*.png',
     'ui/data/pixmaps/*.svg',
     'ui/data/pixmaps/*.ico',
     'ui/data/pixmaps/*.gif',
-    'ui/data/pixmaps/flags/*.png',
+    'ui/data/pixmaps/flags/*.svgz',
     'plugins/*.egg',
     'i18n/*/LC_MESSAGES/*.mo']
 _package_data['deluge.ui.web'] = [

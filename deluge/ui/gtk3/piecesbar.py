@@ -16,9 +16,11 @@ gi.require_version('PangoCairo', '1.0')  # NOQA: E402
 gi.require_version('cairo', '1.0')  # NOQA: E402
 
 # isort:imports-thirdparty
-from gi.repository import PangoCairo, cairo
+from gi.repository import PangoCairo
 from gi.repository.Gtk import DrawingArea, ProgressBar, StateFlags
 from gi.repository.Pango import SCALE, Weight
+
+import cairo
 
 # isort:imports-firstparty
 from deluge.common import PY2
@@ -41,7 +43,7 @@ class PiecesBar(DrawingArea):
         # Done with the ProgressBar styles, don't keep refs of it
         del pb, pb_style
 
-        self.set_size_request(-1, 25)
+        self.set_size_request(-1, 23)
         self.gtkui_config = ConfigManager('gtk3.conf')
 
         self.width = self.prev_width = 0
@@ -72,9 +74,9 @@ class PiecesBar(DrawingArea):
         self.roundcorners_clipping()
 
         self.draw_pieces()
-        self.draw_progress_overlay()
-        self.write_text()
-        self.roundcorners_border()
+#        self.draw_progress_overlay()
+#        self.write_text()
+#        self.roundcorners_border()
 
         # Drawn once, update width, height
         if self.resized():
@@ -93,7 +95,7 @@ class PiecesBar(DrawingArea):
     @staticmethod
     def create_roundcorners_subpath(ctx, x, y, width, height):
         aspect = 1.0
-        corner_radius = height / 10
+        corner_radius = height / 7
         radius = corner_radius / aspect
         degrees = pi / 180
         ctx.new_sub_path()
@@ -117,19 +119,62 @@ class PiecesBar(DrawingArea):
             if self.pieces:
                 pieces = self.pieces
             elif self.num_pieces:
+                # Nothing to draw, hide pieces bar when seeding
+                return
                 # Completed torrents do not send any pieces so create list using 'completed' state.
-                pieces = [COLOR_STATES.index('completed')] * self.num_pieces
+                # pieces = [COLOR_STATES.index('completed')] * self.num_pieces
             start_pos = 0
+            piece_block_width = 0
             piece_width = self.width / len(pieces)
+
+            piece_visible_width = 0.1
+            if piece_width >= piece_visible_width:
+                pieces_num = 1
+                piece_block_width = piece_width
+            else:
+                while piece_block_width < piece_visible_width:
+                    piece_block_width += piece_width
+                pieces_num = round(piece_block_width / piece_width)
+
             pieces_colors = [
                 [color / 65535 for color in self.gtkui_config['pieces_color_%s' % state]]
                 for state in COLOR_STATES
             ]
+
+            piece_block = []
             for state in pieces:
-                ctx.set_source_rgb(*pieces_colors[state])
-                ctx.rectangle(start_pos, 0, piece_width, self.height)
-                ctx.fill()
-                start_pos += piece_width
+                piece_block.append(state)
+                if len(piece_block) == pieces_num:
+
+                    if piece_block.count(COLOR_STATES.index('downloading')):
+                        piece_block_color = COLOR_STATES.index('downloading')
+                    elif piece_block.count(COLOR_STATES.index('missing')):
+                        piece_block_color = COLOR_STATES.index('missing')
+                    elif piece_block.count(COLOR_STATES.index('waiting')) == pieces_num:
+                        piece_block_color = COLOR_STATES.index('waiting')
+                    else:
+                        piece_block_color = COLOR_STATES.index('completed')
+
+                    if piece_block_color == COLOR_STATES.index('completed') \
+                            and piece_block.count(COLOR_STATES.index('completed')) \
+                            and piece_block.count(COLOR_STATES.index('waiting')):
+                        ctx.set_source_rgba(pieces_colors[piece_block_color][0]*0.5,
+                                            pieces_colors[piece_block_color][1]*0.5,
+                                            pieces_colors[piece_block_color][2]*0.5,
+                                            0.8)
+                    else:
+                        ctx.set_source_rgba(pieces_colors[piece_block_color][0],
+                                            pieces_colors[piece_block_color][1],
+                                            pieces_colors[piece_block_color][2],
+                                            0.8)
+
+                    if piece_block_color == COLOR_STATES.index('downloading'):
+                        ctx.rectangle(start_pos - 2, 0, self.width, self.height)
+                    else:
+                        ctx.rectangle(start_pos, 0, self.width, self.height)
+                    ctx.fill()
+                    piece_block = []
+                    start_pos += piece_block_width
 
         self.cr.set_source_surface(self.pieces_overlay)
         self.cr.paint()

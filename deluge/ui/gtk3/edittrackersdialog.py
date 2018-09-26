@@ -98,10 +98,6 @@ class EditTrackersDialog(object):
 
         self.dialog = self.builder.get_object('edit_trackers_dialog')
         self.treeview = self.builder.get_object('tracker_treeview')
-        self.add_tracker_dialog = self.builder.get_object('add_tracker_dialog')
-        self.add_tracker_dialog.set_transient_for(self.dialog)
-        self.edit_tracker_entry = self.builder.get_object('edit_tracker_entry')
-        self.edit_tracker_entry.set_transient_for(self.dialog)
         self.dialog.set_icon(get_deluge_icon())
 
         self.load_edit_trackers_dialog_state()
@@ -200,8 +196,46 @@ class EditTrackersDialog(object):
     def on_button_add_clicked(self, widget):
         log.debug('on_button_add_clicked')
         # Show the add tracker dialog
-        self.add_tracker_dialog.show()
-        self.builder.get_object('textview_trackers').grab_focus()
+        dialog = self.builder.get_object('add_tracker_dialog')
+        textview = self.builder.get_object('textview_trackers')
+
+        dialog.set_default_response(Gtk.ResponseType.OK)
+        dialog.set_transient_for(self.dialog)
+        textview.grab_focus()
+
+        dialog.show_all()
+        response = dialog.run()
+        
+        if response == Gtk.ResponseType.OK:
+
+            # Create a list of trackers from the textview widget
+            textview_buf = self.builder.get_object(
+                'textview_trackers').get_buffer()
+            trackers_text = textview_buf.get_text(
+                *textview_buf.get_bounds(), include_hidden_chars=False)
+
+            for tracker in trackers_tiers_from_text(trackers_text):
+                # Figure out what tier number to use.. it's going to be the highest+1
+                # Also check for duplicates
+                # Check if there are any entries
+                duplicate = False
+                highest_tier = -1
+                for row in self.liststore:
+                    tier = row[0]
+                    if tier > highest_tier:
+                        highest_tier = tier
+                    if tracker == row[1]:
+                        duplicate = True
+                        break
+
+                # If not a duplicate, then add it to the list
+                if not duplicate:
+                    # Add the tracker to the list
+                    self.add_tracker(highest_tier + 1, tracker)    
+            textview_buf.set_text('')
+            
+        textview.get_buffer().set_text('')
+        dialog.hide()
 
     def on_button_remove_clicked(self, widget):
         log.debug('on_button_remove_clicked')
@@ -212,26 +246,23 @@ class EditTrackersDialog(object):
     def on_button_edit_clicked(self, widget):
         """edits an existing tracker"""
         log.debug('on_button_edit_clicked')
-        selected = self.get_selected()
-        if selected:
-            tracker = self.liststore.get_value(selected, 1)
-            self.builder.get_object('entry_edit_tracker').set_text(tracker)
-            self.edit_tracker_entry.show()
-            self.edit_tracker_entry.grab_focus()
-            self.dialog.set_sensitive(False)
+        dialog = self.builder.get_object('edit_tracker_entry')
+        entry = self.builder.get_object('entry_edit_tracker')
 
-    def on_button_edit_cancel_clicked(self, widget):
-        log.debug('on_button_edit_cancel_clicked')
-        self.dialog.set_sensitive(True)
-        self.edit_tracker_entry.hide()
+        dialog.set_default_response(Gtk.ResponseType.OK)
+        dialog.set_transient_for(self.dialog)
+        entry.grab_focus()
 
-    def on_button_edit_ok_clicked(self, widget):
-        log.debug('on_button_edit_ok_clicked')
         selected = self.get_selected()
-        tracker = self.builder.get_object('entry_edit_tracker').get_text()
-        self.liststore.set_value(selected, 1, tracker)
-        self.dialog.set_sensitive(True)
-        self.edit_tracker_entry.hide()
+        entry.set_text(self.liststore.get_value(selected, 1))
+        dialog.show_all()
+        response = dialog.run()
+        
+        if response == Gtk.ResponseType.OK:
+            self.liststore.set_value(selected, 1, entry.get_text().decode('utf-8'))
+
+        entry.set_text('')
+        dialog.hide()
 
     def on_button_up_clicked(self, widget):
         log.debug('on_button_up_clicked')
@@ -254,42 +285,3 @@ class EditTrackersDialog(object):
             new_tier = tier + 1
             # Now change the tier for this tracker
             self.liststore.set_value(selected, 0, new_tier)
-
-    def on_button_add_ok_clicked(self, widget):
-        log.debug('on_button_add_ok_clicked')
-
-        # Create a list of trackers from the textview widget
-        textview_buf = self.builder.get_object(
-            'textview_trackers').get_buffer()
-        trackers_text = textview_buf.get_text(
-            *textview_buf.get_bounds(), include_hidden_chars=False)
-
-        for tracker in trackers_tiers_from_text(trackers_text):
-            # Figure out what tier number to use.. it's going to be the highest+1
-            # Also check for duplicates
-            # Check if there are any entries
-            duplicate = False
-            highest_tier = -1
-            for row in self.liststore:
-                tier = row[0]
-                if tier > highest_tier:
-                    highest_tier = tier
-                if tracker == row[1]:
-                    duplicate = True
-                    break
-
-            # If not a duplicate, then add it to the list
-            if not duplicate:
-                # Add the tracker to the list
-                self.add_tracker(highest_tier + 1, tracker)
-
-        # Clear the entry widget and hide the dialog
-        textview_buf.set_text('')
-        self.add_tracker_dialog.hide()
-
-    def on_button_add_cancel_clicked(self, widget):
-        log.debug('on_button_add_cancel_clicked')
-        # Clear the entry widget and hide the dialog
-        b = Gtk.TextBuffer()
-        self.builder.get_object('textview_trackers').set_buffer(b)
-        self.add_tracker_dialog.hide()

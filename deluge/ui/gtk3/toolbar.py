@@ -11,7 +11,7 @@ from __future__ import unicode_literals
 
 import logging
 
-from gi.repository.Gtk import SeparatorToolItem, ToolButton
+from gi.repository.Gtk import SeparatorToolItem, ToolButton, STYLE_CLASS_PRIMARY_TOOLBAR
 
 import deluge.component as component
 from deluge.configmanager import ConfigManager
@@ -26,12 +26,16 @@ class ToolBar(component.Component):
         mainwindow = component.get('MainWindow')
         self.main_builder = mainwindow.get_builder()
         self.toolbar = self.main_builder.get_object('toolbar')
+        # Follow to Toolbar system style theme
+        self.toolbar.get_style_context().add_class(STYLE_CLASS_PRIMARY_TOOLBAR)
         self.config = ConfigManager('gtk3.conf')
         # Connect main window Signals #
         mainwindow.connect_signals(self)
         self.change_sensitivity = [
             'toolbutton_add',
             'toolbutton_remove',
+            'toolbutton_pause_session',
+            'toolbutton_resume_session',
             'toolbutton_pause',
             'toolbutton_resume',
             'toolbutton_queue_up',
@@ -106,6 +110,14 @@ class ToolBar(component.Component):
     def on_toolbutton_remove_clicked(self, data):
         log.debug('on_toolbutton_remove_clicked')
         component.get('MenuBar').on_menuitem_remove_activate(data)
+
+    def on_toolbutton_pause_session_clicked(self, data):
+        log.debug('on_toolbutton_pause_session_clicked')
+        component.get('MenuBar').on_menuitem_pause_session_activate(data)
+
+    def on_toolbutton_resume_session_clicked(self, data):
+        log.debug('on_toolbutton_pause_session_clicked')
+        component.get('MenuBar').on_menuitem_resume_session_activate(data)
 
     def on_toolbutton_pause_clicked(self, data):
         log.debug('on_toolbutton_pause_clicked')
