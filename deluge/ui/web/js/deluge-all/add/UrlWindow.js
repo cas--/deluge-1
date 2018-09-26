@@ -66,6 +66,11 @@ Deluge.add.UrlWindow = Ext.extend(Deluge.add.Window, {
                 filename: url,
                 torrentId: torrentId
             });
+            deluge.client.core.prefetch_magnet_metadata(url, {
+                success: this.onPrefetchMetadata,
+                scope: this,
+                filename: url,
+            });
         } else {
             deluge.client.web.download_torrent_from_url(url, cookies, {
                 success: this.onDownload,
@@ -86,6 +91,23 @@ Deluge.add.UrlWindow = Ext.extend(Deluge.add.Window, {
             filename: filename,
             torrentId: req.options.torrentId
         });
+    },
+
+    onPrefetchMetadata: function(result, obj, response, request) {
+        // python: infoHash, b64metadata = result
+        // metadata = b64decode(b64_metadata)
+        if (metadata) {
+            deluge.client.web.get_torrent_info(
+                null,
+                null,
+                metadata,
+                {
+                    success: this.onGotInfo,
+                    scope: this,
+                    filename: request.options.filename,
+                    torrentId: infoHash,
+            });
+        };
     },
 
     onGotInfo: function(info, obj, response, request) {

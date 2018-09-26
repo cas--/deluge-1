@@ -644,7 +644,7 @@ class WebApi(JSONComponent):
         return d
 
     @export
-    def get_torrent_info(self, filename):
+    def get_torrent_info(self, filename='', filedump=None, metadata=None):
         """
         Return information about a torrent on the filesystem.
 
@@ -664,7 +664,12 @@ class WebApi(JSONComponent):
         :rtype: dictionary
         """
         try:
-            torrent_info = TorrentInfo(filename.strip(), 2)
+            torrent_info = TorrentInfo(
+                filename=filename.strip(),
+                filetree=2,
+                metainfo=filedump,
+                metadata=metadata,
+            )
             return torrent_info.as_dict('name', 'info_hash', 'files_tree')
         except Exception as ex:
             log.error(ex)

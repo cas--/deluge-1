@@ -174,11 +174,6 @@ Deluge.add.AddWindow = Ext.extend(Deluge.add.Window, {
         this.hide();
     },
 
-    onFile: function() {
-        if (!this.file) this.file = new Deluge.add.FileWindow();
-        this.file.show();
-    },
-
     onHide: function() {
         this.optionsPanel.setActiveTab(0);
         this.optionsPanel.files.setDisabled(true);
