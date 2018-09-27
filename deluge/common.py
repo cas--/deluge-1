@@ -32,10 +32,6 @@ import pkg_resources
 from deluge.decorators import deprecated
 from deluge.error import InvalidPathError
 
-# set default encoding=utf8: to solve .torrent file name encoding problem (startswith 'ascii' codec can't decode)
-reload(sys)
-sys.setdefaultencoding('utf8')
-
 try:
     from urllib.parse import unquote_plus, urljoin
     from urllib.request import pathname2url
