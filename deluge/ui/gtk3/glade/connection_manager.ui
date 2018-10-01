@@ -350,8 +350,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="chk_donotshow">
-                        <property name="label" translatable="yes">Hide this dialog</property>
+                      <object class="GtkCheckButton" id="chk_doshow">
+                        <property name="label" translatable="yes">Show connection manager on start</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
