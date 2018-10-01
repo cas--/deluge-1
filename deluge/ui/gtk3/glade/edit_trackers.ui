@@ -89,8 +89,9 @@
                   <object class="GtkLabel" id="label3">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Edit Trackers</property>
                     <property name="xalign">0.05000000074505806</property>
+                    <property name="ypad">10</property>
+                    <property name="label" translatable="yes">Edit Trackers</property>
                     <attributes>
                       <attribute name="weight" value="bold"/>
                       <attribute name="scale" value="1.2"/>
