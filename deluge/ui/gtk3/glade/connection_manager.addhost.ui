@@ -233,5 +233,6 @@
       <action-widget response="0">button_addhost_cancel</action-widget>
       <action-widget response="1">button_addhost_add</action-widget>
     </action-widgets>
+    <accelerator key="Return" signal="activate-default"/>
   </object>
 </interface>
