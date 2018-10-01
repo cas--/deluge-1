@@ -247,6 +247,14 @@ class MenuBar(component.Component):
         component.get('ConnectionManager').show()
 
     # Torrent Menu #
+    def on_menuitem_pause_session_activate(self, data=None):
+        log.debug('on_menuitem_pause_session_activate')
+        client.core.pause_session()
+
+    def on_menuitem_resume_session_activate(self, data=None):
+        log.debug('on_menuitem_resume_session_activate')
+        client.core.resume_session()
+
     def on_menuitem_pause_activate(self, data=None):
         log.debug('on_menuitem_pause_activate')
         client.core.pause_torrents(
