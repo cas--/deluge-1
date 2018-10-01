@@ -45,6 +45,7 @@
           <object class="GtkButtonBox" id="dialog-action_area1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="margin_right">4</property>
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="button_cancel">
@@ -406,7 +407,7 @@
                                 <child internal-child="selection">
                                   <object class="GtkTreeSelection" id="treeselection2"/>
                                 </child>
-                                </object>
+                              </object>
                             </child>
                           </object>
                           <packing>
@@ -456,6 +457,7 @@
                       <object class="GtkBox" id="vbox3">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_left">5</property>
                         <property name="border_width">3</property>
                         <property name="orientation">vertical</property>
                         <property name="spacing">3</property>
@@ -476,6 +478,7 @@
                                   <object class="GtkBox" id="hbox_download_location_chooser">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
+                                    <property name="margin_left">5</property>
                                     <child>
                                       <placeholder/>
                                     </child>
@@ -510,7 +513,7 @@
                               <object class="GtkAlignment" id="alignment8">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="left_padding">5</property>
+                                <property name="left_padding">9</property>
                                 <property name="right_padding">5</property>
                                 <child>
                                   <object class="GtkBox" id="hbox_move_completed_chooser">
@@ -520,8 +523,9 @@
                                       <object class="GtkCheckButton" id="chk_move_completed">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
+                                        <property name="focus_on_click">False</property>
                                         <property name="receives_default">False</property>
-                                        <property name="margin_right">10</property>
+                                        <property name="margin_right">3</property>
                                         <property name="draw_indicator">True</property>
                                         <signal name="toggled" handler="on_chk_move_completed_toggled" swapped="no"/>
                                       </object>
@@ -582,6 +586,7 @@
                                             <property name="label" translatable="yes">Add In _Paused State</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
+                                            <property name="focus_on_click">False</property>
                                             <property name="receives_default">False</property>
                                             <property name="halign">start</property>
                                             <property name="use_underline">True</property>
@@ -598,6 +603,7 @@
                                             <property name="label" translatable="yes">Prioritize First/Last Pieces</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
+                                            <property name="focus_on_click">False</property>
                                             <property name="receives_default">False</property>
                                             <property name="halign">start</property>
                                             <property name="draw_indicator">True</property>

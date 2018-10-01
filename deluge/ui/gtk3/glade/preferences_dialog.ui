@@ -351,6 +351,7 @@
                       <object class="GtkViewport" id="interface_viewport">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_left">15</property>
                         <property name="resize_mode">queue</property>
                         <property name="shadow_type">none</property>
                         <child>
@@ -535,6 +536,7 @@ and daemon (does not apply in Standalone mode).</property>
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">True</property>
                                                         <property name="receives_default">True</property>
+                                                        <property name="color">#000000000000</property>
                                                         <signal name="color-set" handler="on_completed_color_set" swapped="no"/>
                                                       </object>
                                                       <packing>
@@ -1113,6 +1115,8 @@ and daemon (does not apply in Standalone mode).</property>
                       <object class="GtkViewport" id="viewport2">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_left">15</property>
+                        <property name="margin_right">15</property>
                         <property name="resize_mode">queue</property>
                         <property name="shadow_type">none</property>
                         <child>
@@ -1493,6 +1497,7 @@ used sparingly.</property>
                       <object class="GtkViewport" id="viewport3">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_left">15</property>
                         <property name="resize_mode">queue</property>
                         <property name="shadow_type">none</property>
                         <child>
@@ -2035,6 +2040,7 @@ used sparingly.</property>
                       <object class="GtkViewport" id="viewport9">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_left">15</property>
                         <property name="resize_mode">queue</property>
                         <property name="shadow_type">none</property>
                         <child>
@@ -2548,6 +2554,7 @@ used sparingly.</property>
                       <object class="GtkViewport" id="viewport1">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_left">15</property>
                         <property name="resize_mode">queue</property>
                         <property name="shadow_type">none</property>
                         <child>
@@ -2574,7 +2581,7 @@ used sparingly.</property>
                                         <property name="can_focus">True</property>
                                         <property name="tooltip_text" translatable="yes">The IP address of the interface to listen for incoming bittorrent connections on. Leave this empty if you want to use the default.</property>
                                         <property name="max_length">15</property>
-                                        <property name="width_chars">15</property>
+                                        <property name="width_chars">16</property>
                                         <property name="truncate_multiline">True</property>
                                         <property name="primary_icon_activatable">False</property>
                                         <property name="secondary_icon_activatable">False</property>
@@ -2627,7 +2634,7 @@ used sparingly.</property>
                                                 <property name="sensitive">False</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="max_length">5</property>
-                                                <property name="max_width_chars">6</property>
+                                                <property name="width_chars">7</property>
                                                 <property name="primary_icon_activatable">False</property>
                                                 <property name="secondary_icon_activatable">False</property>
                                                 <property name="adjustment">adjustment_spin_incoming_port</property>
@@ -2797,7 +2804,7 @@ The interface adapter name for outgoing BitTorrent connections. (Leave empty for
                                         </property>
                                         <property name="max_length">15</property>
                                         <property name="invisible_char">●</property>
-                                        <property name="width_chars">15</property>
+                                        <property name="width_chars">16</property>
                                         <property name="truncate_multiline">True</property>
                                         <property name="primary_icon_activatable">False</property>
                                         <property name="secondary_icon_activatable">False</property>
@@ -4144,6 +4151,7 @@ the proxy instead of using the local DNS service</property>
                       <object class="GtkViewport" id="viewport8">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_left">15</property>
                         <property name="resize_mode">queue</property>
                         <property name="shadow_type">none</property>
                         <child>
@@ -4231,6 +4239,7 @@ the proxy instead of using the local DNS service</property>
                               <object class="GtkFrame" id="frame30">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <property name="margin_right">15</property>
                                 <property name="label_xalign">0</property>
                                 <property name="shadow_type">none</property>
                                 <child>
@@ -4395,6 +4404,7 @@ the proxy instead of using the local DNS service</property>
                       <object class="GtkViewport" id="viewport7">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_left">15</property>
                         <property name="resize_mode">queue</property>
                         <property name="shadow_type">none</property>
                         <child>
@@ -4664,6 +4674,8 @@ the proxy instead of using the local DNS service</property>
                                   <object class="GtkLabel" id="label61">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
+                                    <property name="xpad">10</property>
+                                    <property name="ypad">10</property>
                                     <property name="label" translatable="yes">Accounts</property>
                                     <attributes>
                                       <attribute name="weight" value="bold"/>
@@ -4744,6 +4756,7 @@ the proxy instead of using the local DNS service</property>
                                           <object class="GtkFrame" id="frame8">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
+                                            <property name="margin_left">15</property>
                                             <property name="label_xalign">0</property>
                                             <property name="shadow_type">none</property>
                                             <child>
