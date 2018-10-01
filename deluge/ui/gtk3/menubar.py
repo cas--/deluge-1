@@ -158,7 +158,7 @@ class MenuBar(component.Component):
         client.register_event_handler('SessionResumedEvent', self.on_sessionresumed_event)
 
         client.core.is_session_paused().addCallback(self.on_is_session_paused)
-        
+
     def stop(self):
         log.debug('MenuBar stopping')
 
@@ -247,14 +247,6 @@ class MenuBar(component.Component):
         component.get('ConnectionManager').show()
 
     # Torrent Menu #
-    def on_menuitem_pause_session_activate(self, data=None):
-        log.debug('on_menuitem_pause_session_activate')
-        client.core.pause_session()
-
-    def on_menuitem_resume_session_activate(self, data=None):
-        log.debug('on_menuitem_resume_session_activate')
-        client.core.resume_session()
-
     def on_menuitem_pause_activate(self, data=None):
         log.debug('on_menuitem_pause_activate')
         client.core.pause_torrents(
