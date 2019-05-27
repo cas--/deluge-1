@@ -24,11 +24,17 @@ matrix:
     - name: Unit tests (libtorrent 1.2)
       env: TOX_ENV=py3
       addons:
-        apt: { sources: [sourceline: "ppa:libtorrent.org/1.2-daily"] }
+        apt:
+          sources:
+            - sourceline: "ppa:libtorrent.org/1.2-daily"
+          packages:
+            - python3-libtorrent
     - if: commit_message =~ SECURITY_TEST
       env: TOX_ENV=security
     - name: Code linting
       env: TOX_ENV=lint
+      # Install py36 to run black formatter.
+      addons: { apt: { sources: [deadsnakes], packages: [python3.6] } }
     - name: Docs build
       env: TOX_ENV=docs
     - name: GTK unit tests
@@ -40,11 +46,8 @@ addons:
   apt:
     sources:
       - sourceline: "ppa:libtorrent.org/rc-1.1-daily"
-      - deadsnakes
     packages:
       - python3-libtorrent
-      # Install py36 specifically for pre-commit to run black formatter.
-      - python3.6
       # Intall python3-venv to provide ensurepip module for tox.
       - python3-venv
 
