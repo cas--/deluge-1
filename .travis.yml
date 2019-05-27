@@ -12,6 +12,7 @@ virtualenv:
 env:
   global:
     - DISPLAY=:99.0
+    - LT_PPA=rc-1.1-daily
 
 git:
   # Set greater depth to get version from tags.
@@ -19,8 +20,12 @@ git:
 
 matrix:
   include:
-    - name: Unit tests - Python 3
+    - name: Unit tests
       env: TOX_ENV=py3
+    - name: Unit tests (libtorrent 1.2)
+      env:
+        - TOX_ENV=py3
+        - LT_PPA=1.2-daily
     - if: commit_message =~ SECURITY_TEST
       env: TOX_ENV=security
     - name: Code linting
@@ -35,7 +40,7 @@ matrix:
 addons:
   apt:
     sources:
-      - sourceline: "ppa:deluge-team/develop"
+      - sourceline: "ppa:libtorrent.org/$LT_PPA"
       - deadsnakes
     packages:
       - python3-libtorrent
