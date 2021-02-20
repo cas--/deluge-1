@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import tempfile
 from email.utils import formatdate
+from io import open
 
 from twisted.internet import reactor
 from twisted.internet.error import CannotListenError
@@ -161,7 +162,7 @@ class DownloadFileTestCase(unittest.TestCase):
         return self.webserver.stopListening()
 
     def assertContains(self, filename, contents):  # NOQA
-        with open(filename) as _file:
+        with open(filename, 'r', encoding='utf8') as _file:
             try:
                 self.assertEqual(_file.read(), contents)
             except Exception as ex:
@@ -169,7 +170,7 @@ class DownloadFileTestCase(unittest.TestCase):
         return filename
 
     def assertNotContains(self, filename, contents, file_mode=''):  # NOQA
-        with open(filename, file_mode) as _file:
+        with open(filename, 'r', encoding='utf8') as _file:
             try:
                 self.assertNotEqual(_file.read(), contents)
             except Exception as ex:
