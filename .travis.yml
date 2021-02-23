@@ -43,6 +43,8 @@ jobs:
       os: windows
       language: shell
       before_install:
+        - "powershell Get-Item Env:"
+        - printenv
         - choco install python --version 3.6.8
         - python --version
         - python -m pip install --upgrade pip
